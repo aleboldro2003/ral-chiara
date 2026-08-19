@@ -52,7 +52,7 @@ export function CostoAzienda({ ral, nettoAnnuo }: { ral: number; nettoAnnuo: num
       etichetta: `Contributi datore (${percentuale(aliquotaDatore, 1)})`,
       valore: `${euro(costo.contributiDatore)} €`,
     },
-    { etichetta: "TFR maturato", valore: `${euro(costo.tfrQuotaMaturata)} €` },
+    { etichetta: "Quota TFR netta stimata", valore: `${euro(costo.tfrQuotaNetta)} €` },
     { etichetta: "INAIL", valore: costo.inail === null ? "escluso" : `${euro(costo.inail)} €` },
     { etichetta: "Costo totale", valore: `${euro(costo.costoTotale)} €`, totale: true },
   ];
@@ -74,7 +74,7 @@ export function CostoAzienda({ ral, nettoAnnuo }: { ral: number; nettoAnnuo: num
           id="titolo-costo"
           style={{ margin: 0, fontFamily: SERIF, fontSize: 31, fontWeight: 400, letterSpacing: "-.01em" }}
         >
-          Costo per l&apos;azienda
+          Stima del costo aziendale
         </h2>
         <p style={{ margin: 0, fontSize: 12, color: "#8B8378" }}>
           Moltiplicatore{" "}
@@ -269,12 +269,28 @@ export function CostoAzienda({ ral, nettoAnnuo }: { ral: number; nettoAnnuo: num
           maxWidth: "85ch",
         }}
       >
-        Netto annuo del dipendente {euro(nettoAnnuo)} € su un costo aziendale di{" "}
+        Netto annuo del dipendente {euro(nettoAnnuo)} € su un costo aziendale stimato di{" "}
         {euro(costo.costoTotale)} €: il{" "}
-        {costo.costoTotale > 0 ? percentuale(nettoAnnuo / costo.costoTotale, 1) : "—"}. TFR maturato al{" "}
-        {percentuale(1 / p.costoDatore.tfr.divisore, 2)} della RAL, di cui{" "}
-        {percentuale(p.costoDatore.tfr.contributoFondoGaranzia, 2)} al Fondo di Garanzia INPS; il costo
-        per l&apos;azienda è comunque l&apos;intero.
+        {costo.costoTotale > 0 ? percentuale(nettoAnnuo / costo.costoTotale, 1) : "—"}.
+      </p>
+      <p
+        style={{
+          margin: "10px 0 0",
+          fontSize: 12,
+          lineHeight: 1.7,
+          color: "#8B8378",
+          maxWidth: "85ch",
+        }}
+      >
+        La quota TFR lorda ex art. 2120 c.c. è 1/13,5 della retribuzione (
+        {percentuale(1 / p.costoDatore.tfr.divisore, 4)}). Da questa il datore detrae lo{" "}
+        {percentuale(p.costoDatore.tfr.contributoAggiuntivoIvs, 2)} previsto dall&apos;art. 3 ultimo
+        comma L. 297/1982, che è una maggiorazione dell&apos;aliquota IVS già compresa nei
+        contributi a carico del datore: sommare la quota lorda produrrebbe un doppio conteggio. Il
+        contributo al Fondo di Garanzia TFR è una voce distinta, pari allo{" "}
+        {percentuale(p.costoDatore.tfr.contributoFondoGaranzia, 2)} (art. 2 c. 8 L. 297/1982),
+        anch&apos;essa compresa nella stima dei contributi datore. Tutta la sezione è una stima e
+        dipende da CCNL, settore e dimensione aziendale.
       </p>
     </section>
   );

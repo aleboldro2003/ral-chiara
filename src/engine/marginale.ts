@@ -3,12 +3,12 @@
  * per differenze finite. Nessun valore precalcolato: la gobba e i gradini devono
  * emergere dai dati, non essere disegnati.
  *
- * L'aliquota marginale effettiva risponde alla domanda: di un euro in piu' di
+ * L'aliquota marginale effettiva risponde alla domanda: di un euro in più di
  * RAL, quanto NON arriva al dipendente. Comprende quindi contributi, IRPEF,
  * phase-out delle detrazioni e addizionali, tutto insieme.
  *
- * La curva non e' monotona. Tra circa 35.240 e 44.050 euro di RAL sale a circa
- * il 61%, PIU' che nella fascia immediatamente superiore, perche' in quel tratto
+ * La curva non è monotona. Tra circa 35.240 e 44.050 euro di RAL sale a circa
+ * il 61%, PIÙ che nella fascia immediatamente superiore, perché in quel tratto
  * escono di scena contemporaneamente due agevolazioni: la detrazione art. 13 e
  * l'ulteriore detrazione cuneo.
  */
@@ -28,9 +28,9 @@ export interface OpzioniCurva {
 /**
  * Aliquota marginale in un punto, per differenze finite centrate.
  *
- * La finestra e' centrata (`ral ± passo/2`) e non in avanti, perche' una
+ * La finestra è centrata (`ral ± passo/2`) e non in avanti, perché una
  * differenza in avanti attribuirebbe il gradino di una soglia al punto che la
- * precede, spostando visivamente la discontinuita' di mezzo passo.
+ * precede, spostando visivamente la discontinuità di mezzo passo.
  */
 export function aliquotaMarginale(ral: Euro, passo: Euro, p: ParametriAnno): number {
   const meta = passo / 2;
@@ -73,9 +73,9 @@ export interface SoglieAttraversate extends Discontinuita {
 }
 
 /**
- * Misura il salto del netto attraversando ciascuna soglia dichiarata. E' la
+ * Misura il salto del netto attraversando ciascuna soglia dichiarata. È la
  * funzione che i test usano per verificare che il modello riproduca al centesimo
- * i gradini previsti dalla norma, ed e' la stessa che alimenta le marcature del
+ * i gradini previsti dalla norma, ed è la stessa che alimenta le marcature del
  * grafico.
  */
 export function misuraDiscontinuita(

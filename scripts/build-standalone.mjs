@@ -3,8 +3,8 @@
  * incorporati, nessuna richiesta di rete, apribile ovunque anche senza server.
  *
  * Non duplica l'interfaccia: monta gli stessi componenti React dell'app Next.js
- * a partire da src/standalone.tsx. L'app resta il deliverable, questo file e' il
- * modo piu' corto per farla vedere.
+ * a partire da src/standalone.tsx. L'app resta il deliverable, questo file è il
+ * modo più corto per farla vedere.
  *
  *   node scripts/build-standalone.mjs
  */
@@ -30,7 +30,7 @@ const cssCompilato = join(temporanea, "stile.css");
 writeFileSync(cssSorgente, readFileSync(join(radice, "src/app/globals.css"), "utf-8"));
 
 // Si invoca l'entry JS del CLI con lo stesso node, invece di passare da npx:
-// su Windows spawnSync rifiuta i .cmd con EINVAL, e cosi' si evita anche un
+// su Windows spawnSync rifiuta i .cmd con EINVAL, e così si evita anche un
 // processo intermedio.
 const tailwindCli = join(
   dirname(fileURLToPath(import.meta.resolve("@tailwindcss/cli/package.json"))),
@@ -60,9 +60,16 @@ const bundle = await esbuild.build({
 const js = bundle.outputFiles[0].text;
 const css = readFileSync(cssCompilato, "utf-8");
 
+// La favicon è lo stesso monogramma che il componente usa nel pie' di pagina:
+// una sola fonte, letta dal modulo del marchio invece che duplicata qui.
+const favicon =
+  "data:image/png;base64," +
+  readFileSync(join(radice, "public", "favicon.png")).toString("base64");
+
 // ---------------------------------------------------------------- pagina
 const pagina = `<title>RAL Chiara</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="${favicon}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;450;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">

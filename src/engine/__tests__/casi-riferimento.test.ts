@@ -5,10 +5,10 @@
  * Tolleranza: 1 centesimo. Il motore lavora in piena precisione e arrotonda solo
  * in presentazione, mentre i casi del dossier sono stati calcolati arrotondando
  * ogni voce. La differenza si manifesta una volta sola, sull'IRPEF netta del
- * caso 35.000, e vale 1 centesimo. La scelta e' documentata nella §8 del dossier:
- * un motore mensile richiederebbe l'arrotondamento a ogni step perche' il
+ * caso 35.000, e vale 1 centesimo. La scelta è documentata nella §8 del dossier:
+ * un motore mensile richiederebbe l'arrotondamento a ogni step perché il
  * sostituto d'imposta lavora in centesimi; con il calcolo annuale la scelta
- * opposta e' preferibile, perche' l'arrotondamento intermedio introduce da solo
+ * opposta è preferibile, perché l'arrotondamento intermedio introduce da solo
  * decine di migliaia di micro-violazioni di monotonia.
  */
 
@@ -148,7 +148,7 @@ describe.each(CASI)("caso di riferimento RAL $ral", (caso) => {
     expect(Math.abs(arrotonda(r.nettoAnnuo) - caso.nettoAnnuo)).toBeLessThanOrEqual(CENTESIMO);
   });
 
-  it("netto mensile su 13 mensilita'", () => {
+  it("netto mensile su 13 mensilità", () => {
     expect(Math.abs(arrotonda(r.nettoMensile) - caso.nettoMensile13)).toBeLessThanOrEqual(
       CENTESIMO,
     );
@@ -167,8 +167,8 @@ describe.each(CASI)("caso di riferimento RAL $ral", (caso) => {
   });
 });
 
-describe("il numero di mensilita' non cambia il netto annuo", () => {
-  it.each(p.mensilita.opzioni)("con %i mensilita'", (mensilita) => {
+describe("il numero di mensilità non cambia il netto annuo", () => {
+  it.each(p.mensilita.opzioni)("con %i mensilità", (mensilita) => {
     const r = calcola({ ral: 35000, mensilita }, p);
     expect(arrotonda(r.nettoAnnuo)).toBeCloseTo(26032.18, 2);
     expect(r.nettoMensile * mensilita).toBeCloseTo(r.nettoAnnuo, 8);
@@ -209,5 +209,65 @@ describe("la cascata esposta all'interfaccia", () => {
   it("dichiara l'anno d'imposta e la revisione dei parametri usati", () => {
     expect(r.annoImposta).toBe(2026);
     expect(r.revisioneParametri).toBe(p.revisione);
+  });
+});
+
+/**
+ * Il brief chiede tre output, e il terzo è "quanto sono le tasse". Imposte e
+ * contributi restano separati perché sono giuridicamente diversi: i contributi
+ * previdenziali finanziano una prestazione futura intestata al lavoratore, le
+ * imposte no. Questi test presidiano quella separazione e la sua coerenza con
+ * le righe della cascata.
+ */
+describe("separazione tra imposte e contributi", () => {
+  it("a RAL 35.000 le imposte sono 5.751,33 e i contributi 3.216,50", () => {
+    const r = calcola({ ral: 35000, mensilita: 13 }, p);
+    expect(arrotonda(r.prelievo.imposte)).toBe(5751.33);
+    expect(arrotonda(r.prelievo.contributi)).toBe(3216.5);
+    expect(arrotonda(r.prelievo.totale)).toBe(8967.83);
+  });
+
+  it("le imposte coincidono con la somma delle voci mostrate nella cascata", () => {
+    for (const ral of [18000, 25000, 35000, 60000]) {
+      const r = calcola({ ral, mensilita: 13 }, p);
+      const somma =
+        arrotonda(r.irpef.netta) +
+        arrotonda(r.addizionaleRegionale.importo) +
+        arrotonda(r.addizionaleComunale.importo);
+      expect(arrotonda(r.prelievo.imposte)).toBe(arrotonda(somma));
+    }
+  });
+
+  it("i contributi non sono mai contati tra le imposte", () => {
+    for (const ral of [12000, 20000, 35000, 90000, 130000]) {
+      const r = calcola({ ral, mensilita: 13 }, p);
+      expect(r.prelievo.imposte).not.toBeCloseTo(r.prelievo.totale, 2);
+      expect(r.prelievo.totale).toBeCloseTo(r.prelievo.imposte + r.prelievo.contributi, 6);
+    }
+  });
+
+  it("netto prima dei benefici più benefici fiscali fa il netto annuale", () => {
+    for (const ral of [9000, 15000, 18000, 22000, 35000]) {
+      const r = calcola({ ral, mensilita: 13 }, p);
+      expect(r.prelievo.nettoPrimaDeiBenefici + r.prelievo.beneficiFiscali).toBeCloseTo(
+        r.nettoAnnuo,
+        6,
+      );
+    }
+  });
+
+  it("sotto i 20.000 i benefici fiscali esistono e il netto li supera", () => {
+    const r = calcola({ ral: 18000, mensilita: 13 }, p);
+    expect(r.prelievo.beneficiFiscali).toBeGreaterThan(0);
+    expect(r.nettoAnnuo).toBeGreaterThan(r.prelievo.nettoPrimaDeiBenefici);
+  });
+
+  it("l'incidenza complessiva è quota della RAL, non dell'imponibile", () => {
+    const r = calcola({ ral: 35000, mensilita: 13 }, p);
+    expect(r.prelievo.incidenzaComplessiva).toBeCloseTo(r.prelievo.totale / 35000, 6);
+    expect(r.prelievo.incidenzaImposte + r.prelievo.incidenzaContributi).toBeCloseTo(
+      r.prelievo.incidenzaComplessiva,
+      6,
+    );
   });
 });

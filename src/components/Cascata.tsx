@@ -133,7 +133,7 @@ export function Cascata({ risultato }: { risultato: RisultatoCalcolo }) {
                   }}
                 >
                   {v.url ? (
-                    <a href={v.url} target="_blank" rel="noreferrer">
+                    <a href={v.url} target="_blank" rel="noopener noreferrer">
                       {v.fonte}
                     </a>
                   ) : (

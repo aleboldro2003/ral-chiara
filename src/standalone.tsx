@@ -1,8 +1,8 @@
 /**
  * Punto di ingresso della versione a file singolo.
  *
- * Monta esattamente gli stessi componenti dell'app Next.js: non e' una seconda
- * implementazione dell'interfaccia, e' lo stesso albero React con un altro
+ * Monta esattamente gli stessi componenti dell'app Next.js: non è una seconda
+ * implementazione dell'interfaccia, è lo stesso albero React con un altro
  * bootstrap. Serve a ottenere una pagina autoportante, senza server e senza
  * richieste di rete oltre ai font.
  */

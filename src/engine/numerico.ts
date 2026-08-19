@@ -1,8 +1,8 @@
 /**
- * Utilita' numeriche condivise dal motore. Funzioni pure, nessuna dipendenza.
+ * Utilità numeriche condivise dal motore. Funzioni pure, nessuna dipendenza.
  *
- * Vive in un modulo a se' perche' il troncamento a quattro cifre decimali e' la
- * riga di codice piu' insidiosa del progetto e merita un solo posto in cui
+ * Vive in un modulo a sé perché il troncamento a quattro cifre decimali è la
+ * riga di codice più insidiosa del progetto e merita un solo posto in cui
  * essere scritta, letta e testata.
  */
 
@@ -17,7 +17,7 @@ import type {
 /**
  * Tronca alle prime `cifreDecimali` cifre, scartando il resto.
  *
- * ATTENZIONE, qui c'e' una trappola di floating point che costa 12 centesimi
+ * ATTENZIONE, qui c'è una trappola di floating point che costa 12 centesimi
  * sul caso di riferimento RAL 25.000.
  *
  * `(28000 - 22702.5) / 13000` vale matematicamente 0,4075, ma in doppia
@@ -25,9 +25,9 @@ import type {
  * scritto in modo diretto restituisce 0,4074 invece di 0,4075.
  *
  * Non basta normalizzare `x` prima di troncarlo: anche partendo da un valore
- * gia' ripulito, la moltiplicazione per 10.000 reintroduce l'errore. La
- * normalizzazione va fatta DOPO lo scaling, ed e' quello che fa la riga qui
- * sotto. Il margine di sei decimali sul valore scalato e' ampiamente sopra
+ * già ripulito, la moltiplicazione per 10.000 reintroduce l'errore. La
+ * normalizzazione va fatta DOPO lo scaling, ed è quello che fa la riga qui
+ * sotto. Il margine di sei decimali sul valore scalato è ampiamente sopra
  * l'errore di rappresentazione (dell'ordine di 1e-12 su grandezze come 1e4) e
  * ampiamente sotto qualunque differenza significativa.
  *
@@ -41,11 +41,11 @@ export function troncaA(valore: number, cifreDecimali: number): number {
 }
 
 /**
- * Arrotonda half-up, cioe' allontanandosi dallo zero sui mezzi.
+ * Arrotonda half-up, cioè allontanandosi dallo zero sui mezzi.
  *
- * Non e' il banker's rounding di molte librerie: chi legge una busta paga si
+ * Non è il banker's rounding di molte librerie: chi legge una busta paga si
  * aspetta che 0,005 diventi 0,01. La stessa normalizzazione post-scaling di
- * `troncaA` serve anche qui, perche' 1,005 * 100 vale 100.49999999999999 e un
+ * `troncaA` serve anche qui, perché 1,005 * 100 vale 100.49999999999999 e un
  * `Math.round` diretto restituirebbe 1,00 invece di 1,01.
  */
 export function arrotonda(valore: number, decimali = 2): number {
@@ -101,13 +101,13 @@ export function sommaScaglioni(dettagli: readonly DettaglioScaglione[]): Euro {
 }
 
 /**
- * Trova la prima fascia il cui limite superiore non e' ancora stato superato.
+ * Trova la prima fascia il cui limite superiore non è ancora stato superato.
  * `fino: null` chiude sempre la scala.
  *
- * Il confronto e' `valore <= fascia.fino`, quindi il limite appartiene alla
+ * Il confronto è `valore <= fascia.fino`, quindi il limite appartiene alla
  * fascia che lo nomina: a reddito 28.000 si applica la fascia "fino a 28.000",
- * a 28.000,01 quella successiva. E' la convenzione della norma, ed e' anche
- * cio' che produce le soglie a gradino.
+ * a 28.000,01 quella successiva. È la convenzione della norma, ed è anche
+ * ciò che produce le soglie a gradino.
  */
 export function trovaFascia<T extends { readonly fino: Euro | null }>(
   valore: Euro,
@@ -134,7 +134,7 @@ export interface EsitoFascia {
  * dove il coefficiente vale 1 quando la fascia non lo prevede.
  *
  * Una sola funzione serve sia le quattro fasce dell'art. 13 TUIR sia le quattro
- * dell'ulteriore detrazione cuneo. Il troncamento e' deciso dal singolo
+ * dell'ulteriore detrazione cuneo. Il troncamento è deciso dal singolo
  * coefficiente e non da una regola globale: le fonti lo prescrivono per i
  * rapporti dell'art. 13 (istruzioni 730, Tabella 6 nota 2) ma non per il
  * phase-out del comma 6 della L. 207/2024, che nelle istruzioni non compare
@@ -149,7 +149,7 @@ export function valutaFasciaDetrazione(
     return {
       importo: fascia.base,
       coefficiente: null,
-      formula: `${fascia.base}`,
+      formula: numeroLeggibile(fascia.base),
     };
   }
 
@@ -157,13 +157,45 @@ export function valutaFasciaDetrazione(
   const grezzo = nonNegativo((riferimento - reddito) / denominatore);
   const coefficiente = tronca ? troncaA(grezzo, cifreTroncamento) : grezzo;
 
+  // Quando la base è zero, scriverla come "0 + ..." è rumore: la formula
+  // dell'art. 13 in seconda fascia comincia direttamente dal prodotto.
+  const testaBase = fascia.base === 0 ? "" : `${numeroLeggibile(fascia.base)} + `;
+
   return {
     importo: fascia.base + fascia.fattore * coefficiente,
     coefficiente,
     formula:
-      `${fascia.base} + ${fascia.fattore} x (${riferimento} - ${arrotonda(reddito)}) / ${denominatore}` +
+      `${testaBase}${numeroLeggibile(fascia.fattore)} x ` +
+      `(${numeroLeggibile(riferimento)} - ${numeroLeggibile(arrotonda(reddito))}) / ` +
+      `${numeroLeggibile(denominatore)}` +
       (tronca ? ` [coefficiente troncato a ${cifreTroncamento} decimali]` : ""),
   };
+}
+
+/**
+ * Numero in convenzione italiana per le formule esposte in interfaccia.
+ *
+ * Duplica volutamente la configurazione di `formato.ts` invece di importarla:
+ * `formato.ts` dipende già da questo modulo per `arrotonda`, e l'import inverso
+ * chiuderebbe un ciclo. Sono due righe di Intl, e il ciclo costerebbe di più.
+ *
+ * I decimali si mostrano solo se ci sono: 1.910 resta "1.910", 22.000 resta
+ * "22.000", e 31783.5 diventa "31.783,50".
+ */
+const NUMERO_INTERO = new Intl.NumberFormat("it-IT", {
+  maximumFractionDigits: 0,
+  useGrouping: true,
+});
+
+const NUMERO_DECIMALE = new Intl.NumberFormat("it-IT", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+  useGrouping: true,
+});
+
+export function numeroLeggibile(valore: number): string {
+  const v = arrotonda(valore);
+  return Number.isInteger(v) ? NUMERO_INTERO.format(v) : NUMERO_DECIMALE.format(v);
 }
 
 /** Percentuale come frazione -> stringa leggibile, per le formule esposte in UI. */

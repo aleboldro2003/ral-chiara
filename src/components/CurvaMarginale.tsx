@@ -285,6 +285,21 @@ export function CurvaMarginale({ ral }: { ral: number }) {
         che contiene il salto secco da 184 € dell&apos;addizionale comunale produce una marginale del
         224%, e un asse che arrivasse fin lì schiaccerebbe tutto il resto.
       </p>
+      <p
+        style={{
+          margin: "10px 0 0",
+          fontSize: 12,
+          lineHeight: 1.7,
+          color: "#8B8378",
+          maxWidth: "85ch",
+        }}
+      >
+        <strong style={{ fontWeight: 500, color: "#4A443C" }}>Metodo.</strong> Stima calcolata
+        confrontando il netto su una variazione di {intero(PASSO)} € di RAL. La finestra è ampia di
+        proposito: il troncamento del coefficiente della detrazione a quattro decimali produce
+        gradini da pochi centesimi ogni ~1,43 € di RAL, e una finestra più stretta restituirebbe
+        quel rumore invece dell&apos;andamento.
+      </p>
     </section>
   );
 }

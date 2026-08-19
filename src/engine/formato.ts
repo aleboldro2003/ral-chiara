@@ -1,9 +1,9 @@
 /**
- * Formattazione in convenzione italiana. E' l'unico modulo del motore che sa
- * qualcosa di locale e di presentazione, ed e' comunque puro: nessun DOM,
+ * Formattazione in convenzione italiana. È l'unico modulo del motore che sa
+ * qualcosa di locale e di presentazione, ed è comunque puro: nessun DOM,
  * nessun React.
  *
- * Sta nel motore e non nella UI perche' le formule esposte nei pannelli di
+ * Sta nel motore e non nella UI perché le formule esposte nei pannelli di
  * dettaglio ("1.910 x (50.000 - 31.783,50) / 22.000") vengono costruite qui,
  * insieme ai numeri che descrivono.
  */
@@ -12,12 +12,12 @@ import { arrotonda } from "./numerico";
 import type { Aliquota, Euro } from "./tipi";
 
 /**
- * `useGrouping: true` non e' pleonastico. L'impostazione predefinita di ICU per
- * la locale italiana e' "min2", che sopprime il separatore sui numeri a quattro
+ * `useGrouping: true` non è pleonastico. L'impostazione predefinita di ICU per
+ * la locale italiana è "min2", che sopprime il separatore sui numeri a quattro
  * cifre: senza, 3.216,50 verrebbe stampato "3216,50" mentre 26.032,18 mantiene
  * il punto, e in una colonna di importi incolonnati la differenza salta subito
  * all'occhio. Il valore booleano `true` equivale ad "always" per specifica, ed
- * e' quello tipizzato in tutte le versioni della libreria standard.
+ * è quello tipizzato in tutte le versioni della libreria standard.
  */
 const EURO = new Intl.NumberFormat("it-IT", {
   minimumFractionDigits: 2,

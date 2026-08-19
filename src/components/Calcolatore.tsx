@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import { calcola } from "@/engine/calcola";
 import { euro, intero, percentuale } from "@/engine/formato";
@@ -19,6 +19,7 @@ const MONO = "'IBM Plex Mono', ui-monospace, monospace";
 
 const SLIDER_MIN = 8000;
 const SLIDER_MAX = 140000;
+const RAL_ESEMPIO = 35000;
 
 /** Accetta "35.000", "35000", "35000,50". Restituisce NaN se non è un numero. */
 function leggiRal(testo: string): number {
@@ -33,30 +34,78 @@ function leggiRal(testo: string): number {
 }
 
 export function Calcolatore() {
-  const [testoRal, setTestoRal] = useState(() => intero(35000));
+  /**
+   * Due stati distinti, ed è il punto centrale di questo componente.
+   *
+   * `testoRal` è quello che si sta scrivendo; `ralCalcolata` è quello su cui i
+   * risultati sono costruiti. Digitare non ricalcola: serve il pulsante o
+   * Invio. Lo slider invece scrive su entrambi, perché trascinare senza vedere
+   * la curva muoversi non avrebbe senso.
+   */
+  const [testoRal, setTestoRal] = useState(() => intero(RAL_ESEMPIO));
+  const [ralCalcolata, setRalCalcolata] = useState(RAL_ESEMPIO);
   const [mensilita, setMensilita] = useState(p.mensilita.predefinita);
 
-  const ralGrezza = useMemo(() => leggiRal(testoRal), [testoRal]);
-  const valida = Number.isFinite(ralGrezza) && ralGrezza >= 0;
-  const ral = valida ? ralGrezza : 0;
+  const esito = useRef<HTMLDivElement>(null);
+
+  const ralDigitata = useMemo(() => leggiRal(testoRal), [testoRal]);
+  const valida = Number.isFinite(ralDigitata) && ralDigitata >= 0;
+  const inSospeso = valida && ralDigitata !== ralCalcolata;
 
   const r = useMemo(
-    () => calcola({ ral, mensilita, giorniLavorati: p.profiloStandard.giorniLavorati }, p),
-    [ral, mensilita],
+    () =>
+      calcola(
+        { ral: ralCalcolata, mensilita, giorniLavorati: p.profiloStandard.giorniLavorati },
+        p,
+      ),
+    [ralCalcolata, mensilita],
   );
 
-  /** Ripartizione della RAL più le somme esenti, che non sono parte del lordo. */
+  /**
+   * Porta l'attenzione sul risultato senza strapparlo via: se il blocco è già
+   * sotto gli occhi non si muove niente, e chi ha ridotto le animazioni non
+   * subisce lo scorrimento.
+   */
+  const calcolaOra = useCallback(() => {
+    if (!valida) return;
+    setRalCalcolata(ralDigitata);
+
+    const nodo = esito.current;
+    if (!nodo) return;
+    const box = nodo.getBoundingClientRect();
+    const fuoriVista = box.top < 0 || box.bottom > window.innerHeight;
+    if (fuoriVista) {
+      const riduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      nodo.scrollIntoView({ behavior: riduce ? "auto" : "smooth", block: "center" });
+    }
+  }, [valida, ralDigitata]);
+
+  const daSlider = useCallback((v: number) => {
+    setTestoRal(intero(v));
+    setRalCalcolata(v);
+  }, []);
+
+  /**
+   * Ripartizione della RAL. I benefici fiscali NON entrano qui: non sono parte
+   * del lordo, si sommano al netto, e alle RAL basse porterebbero la somma
+   * delle fette oltre il 100%. Stanno nella loro riga, sotto.
+   */
   const barra = useMemo(() => {
-    const addizionali = r.addizionaleRegionale.importo + r.addizionaleComunale.importo;
-    const bonus =
-      r.agevolazioni.sommaEsente.importo + r.agevolazioni.trattamentoIntegrativo.importo;
-    const totale = Math.max(1, ral + bonus);
+    const totale = Math.max(1, ralCalcolata);
+    const conBenefici = r.prelievo.beneficiFiscali > 0.005;
     return [
-      { etichetta: "Netto", v: r.nettoAnnuo - bonus, colore: "#C8A15A" },
-      { etichetta: "Contributi INPS", v: r.contributi.totale, colore: "#5C7C93" },
+      {
+        etichetta: conBenefici ? "Netto prima dei benefici fiscali" : "Netto",
+        v: r.prelievo.nettoPrimaDeiBenefici,
+        colore: "#C8A15A",
+      },
+      { etichetta: "Contributi INPS", v: r.prelievo.contributi, colore: "#5C7C93" },
       { etichetta: "IRPEF netta", v: r.irpef.netta, colore: "#1F4B6E" },
-      { etichetta: "Addizionali", v: addizionali, colore: "#A03A22" },
-      { etichetta: "Somme esenti", v: bonus, colore: "#2C6E3F" },
+      {
+        etichetta: "Addizionali",
+        v: r.addizionaleRegionale.importo + r.addizionaleComunale.importo,
+        colore: "#A03A22",
+      },
     ]
       .filter((b) => b.v > 0.5)
       .map((b) => ({
@@ -65,7 +114,10 @@ export function Calcolatore() {
         w: `${((b.v / totale) * 100).toFixed(2)}%`,
         valore: `${euro(b.v)} €`,
       }));
-  }, [r, ral]);
+  }, [r, ralCalcolata]);
+
+  const sopraMassimale = ralCalcolata > p.contributiLavoratore.massimaleAnnuo;
+  const benefici = r.prelievo.beneficiFiscali > 0.005;
 
   return (
     <>
@@ -81,7 +133,10 @@ export function Calcolatore() {
           }}
         >
           <div>
-            <label htmlFor="ral" style={{ ...etichettaStile("#A39B8E"), display: "block", marginBottom: 22 }}>
+            <label
+              htmlFor="ral"
+              style={{ ...etichettaStile("#A39B8E"), display: "block", marginBottom: 22 }}
+            >
               Retribuzione annua lorda
             </label>
             <div
@@ -99,6 +154,13 @@ export function Calcolatore() {
                 autoComplete="off"
                 value={testoRal}
                 onChange={(e) => setTestoRal(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    calcolaOra();
+                  }
+                }}
+                aria-describedby="nota-ral"
                 style={{
                   flex: 1,
                   minWidth: 0,
@@ -121,8 +183,8 @@ export function Calcolatore() {
               min={SLIDER_MIN}
               max={SLIDER_MAX}
               step={500}
-              value={Math.min(SLIDER_MAX, Math.max(SLIDER_MIN, ral))}
-              onChange={(e) => setTestoRal(intero(Number(e.target.value)))}
+              value={Math.min(SLIDER_MAX, Math.max(SLIDER_MIN, ralCalcolata))}
+              onChange={(e) => daSlider(Number(e.target.value))}
               aria-label="Trascina per cambiare la RAL"
               style={{
                 width: "100%",
@@ -145,6 +207,30 @@ export function Calcolatore() {
               <span>{intero(SLIDER_MIN)}</span>
               <span>{intero(SLIDER_MAX)}</span>
             </div>
+
+            <button
+              type="button"
+              onClick={calcolaOra}
+              disabled={!valida}
+              style={{
+                marginTop: 26,
+                width: "100%",
+                border: inSospeso ? "1px solid #C8A15A" : "1px solid rgba(200,161,90,.45)",
+                borderRadius: 2,
+                padding: "15px 22px",
+                fontFamily: MONO,
+                fontSize: 13,
+                letterSpacing: ".08em",
+                textTransform: "uppercase",
+                cursor: valida ? "pointer" : "not-allowed",
+                background: inSospeso ? "#C8A15A" : "transparent",
+                color: !valida ? "#6E675D" : inSospeso ? "#14120F" : "#C8A15A",
+                opacity: valida ? 1 : 0.55,
+                transition: "background .15s, color .15s, border-color .15s",
+              }}
+            >
+              Calcola il mio netto
+            </button>
 
             <div
               style={{
@@ -187,6 +273,7 @@ export function Calcolatore() {
                 </div>
               </div>
               <p
+                id="nota-ral"
                 style={{
                   margin: 0,
                   fontSize: "12.5px",
@@ -195,21 +282,25 @@ export function Calcolatore() {
                   maxWidth: 270,
                 }}
               >
-                {valida ? (
+                {!valida ? (
+                  <>Inserisci la RAL come numero, ad esempio 35.000.</>
+                ) : inSospeso ? (
+                  <>Premi Calcola o Invio per aggiornare il risultato.</>
+                ) : (
                   <>
                     Impiegato, tempo indeterminato,
                     <br />
                     anno intero, {p.profiloStandard.comune}.
                   </>
-                ) : (
-                  <>Inserisci la RAL come numero, ad esempio 35.000.</>
                 )}
               </p>
             </div>
           </div>
 
           <div
+            ref={esito}
             className="colonna-affiancata"
+            aria-live="polite"
             style={{
               minWidth: 0,
               borderLeft: "1px solid rgba(246,243,238,.12)",
@@ -243,7 +334,7 @@ export function Calcolatore() {
             >
               <div>
                 <p style={{ ...etichettaStile("#A39B8E"), letterSpacing: ".18em", marginBottom: 8 }}>
-                  Netto mensile
+                  Netto mensile medio
                 </p>
                 <p
                   style={{
@@ -262,7 +353,7 @@ export function Calcolatore() {
               </div>
               <div>
                 <p style={{ ...etichettaStile("#A39B8E"), letterSpacing: ".18em", marginBottom: 8 }}>
-                  Aliquota media
+                  Incidenza complessiva
                 </p>
                 <p
                   style={{
@@ -273,10 +364,66 @@ export function Calcolatore() {
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
-                  {percentuale(r.aliquotaMediaEffettiva, 1)}
+                  {percentuale(r.prelievo.incidenzaComplessiva, 1)}
                 </p>
                 <p style={{ margin: "5px 0 0", fontSize: "11.5px", color: "#6E675D" }}>
-                  {euro(ral - r.nettoAnnuo)} € trattenuti
+                  della RAL tra contributi e imposte
+                </p>
+              </div>
+            </div>
+
+            {/*
+              Il brief chiede tre output, e il terzo è "quanto sono le tasse".
+              Imposte e contributi restano separati perché sono cose diverse: i
+              contributi finanziano una prestazione futura intestata al
+              lavoratore, le imposte no.
+            */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 26,
+                marginTop: 26,
+                paddingTop: 26,
+                borderTop: "1px solid rgba(246,243,238,.12)",
+              }}
+            >
+              <div>
+                <p style={{ ...etichettaStile("#A39B8E"), letterSpacing: ".18em", marginBottom: 8 }}>
+                  Imposte
+                </p>
+                <p
+                  style={{
+                    margin: 0,
+                    fontFamily: MONO,
+                    fontSize: 20,
+                    fontWeight: 500,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {euro(r.prelievo.imposte)} €
+                </p>
+                <p style={{ margin: "5px 0 0", fontSize: "11.5px", color: "#6E675D" }}>
+                  IRPEF netta e addizionali
+                </p>
+              </div>
+              <div>
+                <p style={{ ...etichettaStile("#A39B8E"), letterSpacing: ".18em", marginBottom: 8 }}>
+                  Contributi
+                </p>
+                <p
+                  style={{
+                    margin: 0,
+                    fontFamily: MONO,
+                    fontSize: 20,
+                    fontWeight: 500,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {euro(r.prelievo.contributi)} €
+                </p>
+                <p style={{ margin: "5px 0 0", fontSize: "11.5px", color: "#6E675D" }}>
+                  previdenziali IVS, a tuo carico
                 </p>
               </div>
             </div>
@@ -315,11 +462,97 @@ export function Calcolatore() {
               </span>
             ))}
           </div>
+
+          {benefici && (
+            <div
+              style={{
+                marginTop: 20,
+                paddingTop: 18,
+                borderTop: "1px solid rgba(246,243,238,.12)",
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "baseline",
+                gap: "10px 28px",
+              }}
+            >
+              <span style={{ ...etichettaStile("#2C6E3F"), letterSpacing: ".18em" }}>
+                Benefici fiscali
+              </span>
+              <span style={{ fontSize: "12.5px", lineHeight: 1.6, color: "#A39B8E" }}>
+                {r.agevolazioni.sommaEsente.importo > 0.005 && (
+                  <>
+                    somma esente del cuneo{" "}
+                    <span style={{ fontFamily: MONO, color: "#F6F3EE" }}>
+                      {euro(r.agevolazioni.sommaEsente.importo)} €
+                    </span>
+                  </>
+                )}
+                {r.agevolazioni.sommaEsente.importo > 0.005 &&
+                  r.agevolazioni.trattamentoIntegrativo.importo > 0.005 && <> · </>}
+                {r.agevolazioni.trattamentoIntegrativo.importo > 0.005 && (
+                  <>
+                    trattamento integrativo{" "}
+                    <span style={{ fontFamily: MONO, color: "#F6F3EE" }}>
+                      {euro(r.agevolazioni.trattamentoIntegrativo.importo)} €
+                    </span>
+                  </>
+                )}
+              </span>
+              <span
+                style={{
+                  fontFamily: MONO,
+                  fontSize: "11.5px",
+                  color: "#6E675D",
+                  flexBasis: "100%",
+                }}
+              >
+                {euro(r.prelievo.nettoPrimaDeiBenefici)} + {euro(r.prelievo.beneficiFiscali)} ={" "}
+                <span style={{ color: "#F6F3EE" }}>{euro(r.nettoAnnuo)} €</span> di netto annuo
+              </span>
+            </div>
+          )}
         </div>
       </section>
 
-      {r.discontinuitaVicine.length > 0 && (
+      {(sopraMassimale || r.discontinuitaVicine.length > 0) && (
         <div style={{ ...CONTENITORE, padding: "34px var(--gutter) 0", display: "grid", gap: 14 }}>
+          {sopraMassimale && (
+            <div
+              style={{
+                background: "#FFFDFA",
+                border: "1px solid #E4DFD6",
+                borderLeft: "3px solid #5C7C93",
+                borderRadius: 3,
+                padding: "20px 24px",
+              }}
+            >
+              <p style={{ margin: 0, fontSize: "14.5px", fontWeight: 500 }}>
+                Sopra il massimale contributivo
+              </p>
+              <p
+                style={{
+                  margin: "7px 0 0",
+                  fontSize: 13,
+                  lineHeight: 1.6,
+                  color: "#4A443C",
+                  maxWidth: "80ch",
+                }}
+              >
+                Sopra il massimale contributivo di{" "}
+                {intero(p.contributiLavoratore.massimaleAnnuo)} € i contributi IVS si fermano. Il
+                massimale si applica ai soli lavoratori iscritti alla previdenza obbligatoria dal 1°
+                gennaio 1996 e privi di anzianità contributiva precedente (art. 2 c. 18 L.
+                335/1995): per gli altri non opera.
+              </p>
+            </div>
+          )}
+
+          {/*
+            Avviso di prossimità alle soglie. Il tono resta descrittivo: dice
+            dove sta il gradino e cosa succede attraversandolo, mai cosa
+            converrebbe chiedere. La RAL mostrata è arrotondata per eccesso, così
+            chi ha già superato la soglia non si legge ancora al di sotto.
+          */}
           {r.discontinuitaVicine.map((s) => {
             const scende = s.saltoNormativo < 0;
             const colore = scende ? "#A03A22" : "#2C6E3F";
@@ -348,7 +581,8 @@ export function Calcolatore() {
                       maxWidth: "75ch",
                     }}
                   >
-                    {s.descrizione}
+                    Soglia a {intero(ralSogliaVisualizzata(s, p))} € di RAL. {s.descrizione} Il
+                    netto {scende ? "scende" : "sale"} di {euro(Math.abs(s.saltoNormativo))} €.
                   </p>
                   <p style={{ margin: "9px 0 0", fontSize: 11, color: "#8B8378" }}>{s.fonte}</p>
                 </div>
@@ -393,8 +627,8 @@ export function Calcolatore() {
       )}
 
       <Cascata risultato={r} />
-      <CurvaMarginale ral={ral} />
-      <CostoAzienda ral={ral} nettoAnnuo={r.nettoAnnuo} />
+      <CurvaMarginale ral={ralCalcolata} />
+      <CostoAzienda ral={ralCalcolata} nettoAnnuo={r.nettoAnnuo} />
     </>
   );
 }

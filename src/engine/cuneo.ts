@@ -2,18 +2,18 @@
  * Misure di riduzione del cuneo fiscale (L. 207/2024 art. 1 commi 4-9) e
  * trattamento integrativo (D.L. 3/2020 art. 1).
  *
- * Dal 2025 il cuneo NON e' piu' un esonero contributivo: i contributi INPS si
+ * Dal 2025 il cuneo NON è più un esonero contributivo: i contributi INPS si
  * versano per intero, la posizione previdenziale resta piena, e il beneficio
  * arriva per via fiscale. Sono due misure alternative:
  *
  *   comma 4  somma esente        reddito complessivo <= 20.000   si somma al netto
  *   comma 6  ulteriore detrazione 20.000 < reddito complessivo <= 40.000   riduce l'imposta
  *
- * Mai cumulabili tra loro. Il trattamento integrativo, che ha fonte diversa, e'
+ * Mai cumulabili tra loro. Il trattamento integrativo, che ha fonte diversa, è
  * invece cumulabile con la somma esente.
  */
 
-import { nonNegativo, trovaFascia, valutaFasciaDetrazione } from "./numerico";
+import { nonNegativo, numeroLeggibile, trovaFascia, valutaFasciaDetrazione } from "./numerico";
 import type {
   DettaglioAgevolazioni,
   DettaglioSommaEsente,
@@ -35,9 +35,9 @@ export interface EsitoUlterioreDetrazione {
  * troncamento discende dalle note alle tabelle dei modelli dichiarativi, che
  * coprono l'art. 13 e non questa formula, che nelle istruzioni non compare
  * nemmeno. Estenderla per analogia sarebbe un'assunzione nostra travestita da
- * norma. E' precisamente il motivo per cui il troncamento e' un flag del
+ * norma. È precisamente il motivo per cui il troncamento è un flag del
  * singolo coefficiente e non una regola globale del motore: due formule
- * strutturalmente identiche seguono regole di arrotondamento diverse, perche'
+ * strutturalmente identiche seguono regole di arrotondamento diverse, perché
  * hanno fonti diverse.
  */
 export function calcolaUlterioreDetrazione(
@@ -52,14 +52,14 @@ export function calcolaUlterioreDetrazione(
     return {
       spettante: 0,
       coefficiente: null,
-      formula: `non spetta: reddito complessivo <= ${par.spettanzaRedditoComplessivoMin} (si applica invece la somma esente del comma 4)`,
+      formula: `non spetta: reddito complessivo <= ${numeroLeggibile(par.spettanzaRedditoComplessivoMin)} (si applica invece la somma esente del comma 4)`,
     };
   }
   if (reddito > par.spettanzaRedditoComplessivoMax) {
     return {
       spettante: 0,
       coefficiente: null,
-      formula: `non spetta: reddito complessivo > ${par.spettanzaRedditoComplessivoMax}`,
+      formula: `non spetta: reddito complessivo > ${numeroLeggibile(par.spettanzaRedditoComplessivoMax)}`,
     };
   }
 
@@ -88,12 +88,12 @@ export function calcolaUlterioreDetrazione(
  *
  * Tre cose che quasi tutti sbagliano, e che qui sono tre righe distinte:
  *
- * 1. La percentuale e' UNICA sulla fascia di appartenenza, applicata all'intero
- *    reddito. Non e' progressiva per scaglioni come l'IRPEF. Per 18.000 euro la
- *    somma e' 18.000 x 4,8% = 864 euro, non 8.500x7,1% + 6.500x5,3% + 3.000x4,8%
+ * 1. La percentuale è UNICA sulla fascia di appartenenza, applicata all'intero
+ *    reddito. Non è progressiva per scaglioni come l'IRPEF. Per 18.000 euro la
+ *    somma è 18.000 x 4,8% = 864 euro, non 8.500x7,1% + 6.500x5,3% + 3.000x4,8%
  *    = 1.092 euro.
  *
- * 2. La terza fascia non ha tetto: il limite di 20.000 euro e' condizione di
+ * 2. La terza fascia non ha tetto: il limite di 20.000 euro è condizione di
  *    spettanza sul REDDITO COMPLESSIVO, posta nell'alinea del comma, non
  *    estremo della fascia percentuale sul REDDITO DI LAVORO DIPENDENTE. Nel
  *    caso standard le due grandezze coincidono, ma sono parametri distinti.
@@ -102,7 +102,7 @@ export function calcolaUlterioreDetrazione(
  *    stabilire QUALE percentuale si applica, e poi si applica quella percentuale
  *    al reddito EFFETTIVAMENTE percepito. Esempio della Circolare 4/E del 2025:
  *    3.000 euro percepiti in 92 giorni danno un reddito annuale teorico di
- *    11.902,17 euro, quindi fascia b) al 5,3%, ma la somma spettante e'
+ *    11.902,17 euro, quindi fascia b) al 5,3%, ma la somma spettante è
  *    5,3% x 3.000 = 159 euro, non 5,3% x 11.902,17.
  */
 export function calcolaSommaEsente(
@@ -158,25 +158,25 @@ export function calcolaSommaEsente(
     spettante: true,
     motivoNonSpettante: null,
     percentualeApplicata: fascia.percentuale,
-    formula: `${(fascia.percentuale * 100).toString().replace(".", ",")}% x ${effettivo.toFixed(2)} (percentuale scelta sul reddito annualizzato di ${annualizzato.toFixed(2)})`,
+    formula: `${(fascia.percentuale * 100).toString().replace(".", ",")}% x ${numeroLeggibile(effettivo)} (percentuale scelta sul reddito annualizzato di ${numeroLeggibile(annualizzato)})`,
   };
 }
 
 /**
  * Trattamento integrativo, D.L. 3/2020 art. 1 co. 1.
  *
- * La condizione di capienza NON e' `imposta lorda > detrazione art. 13`, ma
- * `imposta lorda > (detrazione art. 13 co. 1 - 75 euro)`. La franchigia e' stata
- * inserita dall'art. 1 co. 3 della L. 207/2024 e non e' un numero arbitrario:
+ * La condizione di capienza NON è `imposta lorda > detrazione art. 13`, ma
+ * `imposta lorda > (detrazione art. 13 co. 1 - 75 euro)`. La franchigia è stata
+ * inserita dall'art. 1 co. 3 della L. 207/2024 e non è un numero arbitrario:
  * neutralizza l'incremento della detrazione da 1.880 a 1.955 euro, che
  * altrimenti avrebbe fatto perdere il beneficio a lavoratori che prima ne erano
- * destinatari. 1.955 - 75 = 1.880, cioe' la soglia di capienza resta quella
+ * destinatari. 1.955 - 75 = 1.880, cioè la soglia di capienza resta quella
  * storica.
  *
  * Due distinzioni che nel caso standard non si vedono ma esistono:
- *  - l'imposta lorda della condizione e' quella sui SOLI redditi di lavoro
+ *  - l'imposta lorda della condizione è quella sui SOLI redditi di lavoro
  *    dipendente e assimilati, non l'imposta lorda complessiva;
- *  - la detrazione di confronto e' quella del comma 1, senza la maggiorazione
+ *  - la detrazione di confronto è quella del comma 1, senza la maggiorazione
  *    di 65 euro che sta al comma 1.1 (e che sotto i 15.000 euro non spetta
  *    comunque).
  */

@@ -15,19 +15,19 @@ const p = parametriPerAnno();
 
 describe("troncaA — la trappola di floating point", () => {
   /**
-   * Questo e' il test che ha valore reale. Il coefficiente del caso di
+   * Questo è il test che ha valore reale. Il coefficiente del caso di
    * riferimento RAL 25.000 vale matematicamente 0,4075 esatto, ma in doppia
-   * precisione e' 0.40749999999999997. Un troncamento scritto in modo diretto
+   * precisione è 0.40749999999999997. Un troncamento scritto in modo diretto
    * restituisce 0,4074, sbaglia la detrazione di 12 centesimi e sposta il netto
    * da 20.569,65 a 20.569,53.
    */
   it("tronca 0.40749999999999997 a 0,4075 e non a 0,4074", () => {
     const grezzo = (28000 - 22702.5) / 13000;
 
-    // La premessa esatta, che e' piu' sottile di "il valore non e' 0,4075":
-    // il double PIU' VICINO a 0,4075 sta leggermente SOTTO 0,4075. La divisione
-    // restituisce proprio quel double, quindi `grezzo === 0.4075` e' vero, ma
-    // moltiplicarlo per 10.000 non da' 4075, da' 4074.9999999999995.
+    // La premessa esatta, che è più sottile di "il valore non è 0,4075":
+    // il double PIÙ VICINO a 0,4075 sta leggermente SOTTO 0,4075. La divisione
+    // restituisce proprio quel double, quindi `grezzo === 0.4075` è vero, ma
+    // moltiplicarlo per 10.000 non dà 4075, dà 4074.9999999999995.
     expect(grezzo).toBe(0.4075);
     expect(grezzo.toPrecision(17)).toBe("0.40749999999999997");
     expect(grezzo * 10000).toBeLessThan(4075);
@@ -35,7 +35,7 @@ describe("troncaA — la trappola di floating point", () => {
     expect(troncaA(grezzo, 4)).toBe(0.4075);
   });
 
-  it("l'implementazione ingenua sbaglia: e' il motivo per cui la funzione esiste", () => {
+  it("l'implementazione ingenua sbaglia: è il motivo per cui la funzione esiste", () => {
     const grezzo = (28000 - 22702.5) / 13000;
     const ingenua = Math.trunc(grezzo * 10000) / 10000;
     expect(ingenua).toBe(0.4074);
@@ -144,7 +144,7 @@ describe("valutaFasciaDetrazione — una sola forma per due misure diverse", () 
     const esito = valutaFasciaDetrazione(31783.5, fascia, cifre);
     expect(esito.coefficiente).toBe(0.828);
     expect(arrotonda(esito.importo)).toBe(1581.48);
-    // senza troncamento sarebbe stato 1.581,52: e' la revisione 2 del dossier
+    // senza troncamento sarebbe stato 1.581,52: è la revisione 2 del dossier
     expect(arrotonda(1910 * ((50000 - 31783.5) / 22000))).toBe(1581.52);
   });
 
@@ -165,8 +165,8 @@ describe("valutaFasciaDetrazione — una sola forma per due misure diverse", () 
 
 describe("ralPerImponibileFiscale — inversione dei contributi", () => {
   /**
-   * Property di round-trip. E' il test che ha scoperto un errore di segno nel
-   * ramo intermedio dell'inversione: la formula corretta e'
+   * Property di round-trip. È il test che ha scoperto un errore di segno nel
+   * ramo intermedio dell'inversione: la formula corretta è
    * `(imponibile - b x soglia) / (1 - a - b)` e non `(imponibile + b x soglia)`.
    * Con il segno sbagliato l'inversione era esatta sotto la prima fascia
    * pensionabile e sbagliava di oltre 1.100 € sopra, dove nessuno l'avrebbe

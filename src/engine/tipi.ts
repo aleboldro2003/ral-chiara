@@ -1,14 +1,14 @@
 /**
  * Tipi del dominio "da RAL a netto".
  *
- * Il file e' diviso in tre parti:
+ * Il file è diviso in tre parti:
  *   1. i tipi che descrivono il FILE DI PARAMETRI (parametri-<anno>.json)
  *   2. i tipi di INPUT del motore
  *   3. i tipi di RISULTATO, che espongono ogni step intermedio
  *
  * Nessuna logica e nessun valore numerico vivono qui: i numeri stanno nel file
  * di parametri, le formule nei moduli del motore. Aggiungere parametri-2027.json
- * non deve richiedere modifiche ne' a questo file ne' al motore, purche' la
+ * non deve richiedere modifiche né a questo file né al motore, purché la
  * struttura resti quella descritta da `ParametriAnno`.
  */
 
@@ -18,10 +18,20 @@ export type Euro = number;
 /** Frazione, non percentuale: 0,0919 e non 9,19. */
 export type Aliquota = number;
 
-/** Ogni blocco di parametri porta con se' la propria fonte normativa. */
+/** Ogni blocco di parametri porta con sé la propria fonte normativa. */
 export interface Fonte {
   readonly fonte: string;
+  /** Fonte primaria: il testo normativo, quando esiste. */
   readonly url?: string;
+  /**
+   * Fonte secondaria di prassi — circolare, FAQ, scheda operativa. Sta in un
+   * campo suo perché l'etichetta di un link deve dire dove porta: una FAQ del
+   * MEF non è la norma, e presentarla come tale è ciò che rende un riferimento
+   * inverificabile.
+   */
+  readonly urlPrassi?: string;
+  /** Disciplina generale del tributo, distinta dal dato del singolo ente. */
+  readonly urlDisciplina?: string;
   readonly nota?: string;
 }
 
@@ -42,7 +52,7 @@ export interface Scaglione {
  * Coefficiente di phase-out nella forma `(riferimento - reddito) / denominatore`.
  *
  * `tronca` decide se il risultato va assunto nelle prime 4 cifre decimali.
- * E' un flag per-coefficiente e non una regola globale perche' le fonti lo
+ * È un flag per-coefficiente e non una regola globale perché le fonti lo
  * prescrivono per i rapporti dell'art. 13 TUIR (istruzioni 730, Tabella 6 nota 2)
  * ma non per il phase-out dell'ulteriore detrazione L. 207/2024 art. 1 c. 6.
  */
@@ -64,9 +74,9 @@ export interface MinimoDetrazione {
  *
  *     detrazione = base + fattore x coefficiente
  *
- * dove `coefficiente` vale 1 quando il campo omonimo e' null. Questa forma copre
+ * dove `coefficiente` vale 1 quando il campo omonimo è null. Questa forma copre
  * sia le quattro fasce dell'art. 13 TUIR sia le quattro dell'ulteriore detrazione
- * cuneo, cosi' che il motore abbia una sola funzione di valutazione.
+ * cuneo, così che il motore abbia una sola funzione di valutazione.
  */
 export interface FasciaDetrazione {
   readonly fino: Euro | null;
@@ -112,9 +122,9 @@ export interface ParametriSommaEsente extends Fonte {
   readonly spettanzaRedditoComplessivoMax: Euro;
   readonly baseDiCalcolo: BaseReddituale;
   /**
-   * `aliquotaUnicaSuInteroReddito` e' l'unica modalita' corretta per questa misura.
-   * Il campo esiste per rendere esplicito che NON e' progressiva per scaglioni:
-   * l'errore piu' diffuso nelle fonti secondarie.
+   * `aliquotaUnicaSuInteroReddito` è l'unica modalità corretta per questa misura.
+   * Il campo esiste per rendere esplicito che NON è progressiva per scaglioni:
+   * l'errore più diffuso nelle fonti secondarie.
    */
   readonly modalita: "aliquotaUnicaSuInteroReddito";
   readonly fasce: readonly FasciaPercentuale[];
@@ -169,7 +179,7 @@ export interface ParametriAddizionaleRegionale extends Fonte {
 /**
  * `tipo: "esenzione"` significa che, superata la soglia, il tributo si applica
  * sull'intero reddito. `tipo: "franchigia"` significa che si applica alla sola
- * eccedenza. Milano usa la prima: da qui la discontinuita' di 184 euro.
+ * eccedenza. Milano usa la prima: da qui la discontinuità di 184 euro.
  */
 export interface EsenzioneComunale {
   readonly soglia: Euro;
@@ -208,9 +218,19 @@ export interface ParametriCostoDatore {
   readonly contributiDatore: Stima & { readonly modificabile: boolean };
   readonly tfr: {
     readonly divisore: number;
+    /**
+     * Contributo aggiuntivo dell'art. 3 ultimo comma L. 297/1982, che il datore
+     * DETRAE dalla quota TFR. Non è il Fondo di Garanzia: è una maggiorazione
+     * dell'aliquota IVS a carico del datore, quindi è già dentro i contributi
+     * datore. Sottrarlo dalla quota lorda è ciò che evita il doppio conteggio.
+     */
+    readonly contributoAggiuntivoIvs: Aliquota;
+    /** Fondo di Garanzia TFR, art. 2 c. 8 L. 297/1982. Voce autonoma e distinta. */
     readonly contributoFondoGaranzia: Aliquota;
+    readonly contributoFondoGaranziaDirigentiIndustria: Aliquota;
     readonly nota: string;
     readonly fonte: string;
+    readonly url: string;
   };
   readonly inail: Stima & { readonly inclusoNelPredefinito: boolean };
   readonly moltiplicatorePredefinito: number;
@@ -226,15 +246,15 @@ export interface ComponenteSalto {
 /**
  * Punto in cui il netto scende al crescere della RAL. Non sono anomalie del
  * modello: sono soglie a gradino previste dalla norma, in cui il beneficio non
- * si riduce gradualmente ma sparisce. Sono dichiarate come dato perche' i test
+ * si riduce gradualmente ma sparisce. Sono dichiarate come dato perché i test
  * le verificano al centesimo e la UI le usa per avvisare l'utente che si trova
  * vicino a una di esse.
  */
 /**
  * Regola con cui derivare una soglia che la norma non scrive come cifra, ma che
- * cade all'incrocio di piu' parametri. Il tipo e' una union chiusa e non
- * un'espressione da valutare: l'insieme delle derivazioni possibili e' piccolo e
- * conosciuto, e un valutatore di espressioni sarebbe piu' potere del necessario.
+ * cade all'incrocio di più parametri. Il tipo è una union chiusa e non
+ * un'espressione da valutare: l'insieme delle derivazioni possibili è piccolo e
+ * conosciuto, e un valutatore di espressioni sarebbe più potere del necessario.
  */
 export interface SogliaDerivata {
   readonly tipo: "capienzaTrattamentoIntegrativo";
@@ -247,13 +267,13 @@ export interface Discontinuita {
   readonly id: string;
   /** Imponibile di soglia quando la norma lo scrive come cifra; altrimenti null. */
   readonly sogliaImponibile: Euro | null;
-  /** Regola di derivazione quando `sogliaImponibile` e' null. */
+  /** Regola di derivazione quando `sogliaImponibile` è null. */
   readonly sogliaDerivata: SogliaDerivata | null;
   /**
    * Salto previsto dalla norma, pari alla somma dei componenti. **Con segno**:
    * negativo dove il netto scende, positivo dove sale. Le due direzioni stanno
-   * nello stesso array perche' nella norma sono lo stesso fenomeno; distinguerle
-   * e' una preoccupazione della sola interfaccia.
+   * nello stesso array perché nella norma sono lo stesso fenomeno; distinguerle
+   * è una preoccupazione della sola interfaccia.
    */
   readonly saltoNormativo: Euro;
   readonly componenti: readonly ComponenteSalto[];
@@ -271,7 +291,7 @@ export interface Discontinuita {
 }
 
 export interface ParametriDiscontinuita {
-  /** Scarto massimo ammesso nei test, pari al gradino piu' alto della scalinata da troncamento. */
+  /** Scarto massimo ammesso nei test, pari al gradino più alto della scalinata da troncamento. */
   readonly tolleranzaScalinata: Euro;
   readonly soglie: readonly Discontinuita[];
   /** Distanza in euro entro cui la UI avvisa che si sta per attraversare una soglia. */
@@ -336,7 +356,7 @@ export type TipoContratto = "tempoIndeterminato" | "tempoDeterminato";
  * usano in modo non intercambiabile: la spettanza del cuneo si verifica sul
  * reddito complessivo, la percentuale della somma esente si applica al reddito
  * di lavoro dipendente. Il giorno in cui si aggiunge un secondo reddito
- * divergono, e il codice deve gia' distinguerle.
+ * divergono, e il codice deve già distinguerle.
  */
 export type BaseReddituale =
   | "redditoComplessivo"
@@ -374,9 +394,9 @@ export type Esito<T> =
 // ---------------------------------------------------------------------------
 
 /**
- * Una voce della cascata mostrata in interfaccia. `formula` e' la formula
- * applicata con i numeri gia' sostituiti; `fonte` viene dal file di parametri e
- * non e' mai riscritta a mano nella UI.
+ * Una voce della cascata mostrata in interfaccia. `formula` è la formula
+ * applicata con i numeri già sostituiti; `fonte` viene dal file di parametri e
+ * non è mai riscritta a mano nella UI.
  */
 export interface VoceCascata extends Fonte {
   readonly id: string;
@@ -439,7 +459,7 @@ export interface DettaglioSommaEsente {
   readonly percentualeApplicata: Aliquota | null;
   /** Reddito rapportato all'intero anno: serve SOLO a scegliere la percentuale (c. 5). */
   readonly redditoAnnualizzatoPerFascia: Euro;
-  /** Reddito effettivamente percepito: e' a questo che la percentuale si applica (c. 4). */
+  /** Reddito effettivamente percepito: è a questo che la percentuale si applica (c. 4). */
   readonly redditoEffettivo: Euro;
   readonly formula: string;
 }
@@ -450,7 +470,7 @@ export interface DettaglioAgevolazioni {
     readonly importo: Euro;
     readonly spettante: boolean;
     readonly motivoNonSpettante: string | null;
-    /** Imposta lorda sui soli redditi di lavoro dipendente: e' quella della condizione. */
+    /** Imposta lorda sui soli redditi di lavoro dipendente: è quella della condizione. */
     readonly impostaLordaLavoroDipendente: Euro;
     /** Detrazione art. 13 co. 1 (senza la maggiorazione del co. 1.1) meno la franchigia. */
     readonly sogliaCapienza: Euro;
@@ -463,6 +483,29 @@ export interface Redditi {
   readonly redditoLavoroDipendente: Euro;
   readonly redditoComplessivo: Euro;
   readonly imponibileFiscale: Euro;
+}
+
+/**
+ * Le tre grandezze che il brief chiede come output, tenute separate perché sono
+ * giuridicamente diverse: i contributi previdenziali finanziano una prestazione
+ * futura del lavoratore, le imposte no. Sommarli in un unico "trattenuto"
+ * risponde alla domanda sbagliata.
+ */
+export interface Prelievo {
+  /** IRPEF netta più addizionale regionale e comunale. */
+  readonly imposte: Euro;
+  /** Contributi previdenziali IVS a carico del lavoratore. */
+  readonly contributi: Euro;
+  /** imposte + contributi */
+  readonly totale: Euro;
+  /** Somma esente del cuneo più trattamento integrativo: si aggiungono al netto. */
+  readonly beneficiFiscali: Euro;
+  /** Netto prima dei benefici fiscali, cioè RAL − imposte − contributi. */
+  readonly nettoPrimaDeiBenefici: Euro;
+  /** Quota della RAL assorbita da imposte e contributi. */
+  readonly incidenzaComplessiva: Aliquota;
+  readonly incidenzaImposte: Aliquota;
+  readonly incidenzaContributi: Aliquota;
 }
 
 export interface RisultatoCalcolo {
@@ -478,17 +521,28 @@ export interface RisultatoCalcolo {
   readonly nettoAnnuo: Euro;
   readonly nettoMensile: Euro;
   readonly aliquotaMediaEffettiva: Aliquota;
+  /** Imposte e contributi separati, più i benefici fiscali che si sommano al netto. */
+  readonly prelievo: Prelievo;
   /** La cascata pronta da rendere, nell'ordine in cui va letta. */
   readonly cascata: readonly VoceCascata[];
-  /** Discontinuita' entro la distanza di allerta dalla RAL richiesta. */
+  /** Discontinuità entro la distanza di allerta dalla RAL richiesta. */
   readonly discontinuitaVicine: readonly Discontinuita[];
 }
 
 export interface CostoAzienda {
   readonly ral: Euro;
   readonly contributiDatore: Euro;
-  readonly tfrQuotaMaturata: Euro;
-  readonly tfrAccantonatoLavoratore: Euro;
+  /** Quota lorda ex art. 2120 c.c.: RAL / 13,5 = 7,4074%. Non è un costo aggiuntivo pieno. */
+  readonly tfrQuotaLorda: Euro;
+  /**
+   * Quota TFR netta stimata: lorda meno il contributo aggiuntivo IVS dello 0,50%.
+   * È QUESTA che entra nel costo totale, perché lo 0,50% è già dentro i
+   * contributi a carico del datore.
+   */
+  readonly tfrQuotaNetta: Euro;
+  /** Lo 0,50% dell'art. 3 ultimo comma L. 297/1982, detratto dalla quota lorda. */
+  readonly tfrContributoAggiuntivoIvs: Euro;
+  /** Fondo di Garanzia TFR allo 0,20%, voce distinta già compresa nei contributi datore. */
   readonly tfrFondoGaranzia: Euro;
   readonly inail: Euro | null;
   readonly costoTotale: Euro;

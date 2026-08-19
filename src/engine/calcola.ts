@@ -1,7 +1,7 @@
 /**
  * Orchestratore: da RAL a risultato completo.
  *
- * Restituisce ogni step intermedio, non solo il netto finale, cosi' che
+ * Restituisce ogni step intermedio, non solo il netto finale, così che
  * l'interfaccia possa mostrare la scomposizione completa senza rifare calcoli.
  *
  * LA CATENA
@@ -20,8 +20,8 @@
  *   NETTO ANNUO = RAL - contributi - IRPEF netta - addizionali + somme esenti
  *
  * I contributi sono oneri deducibili, riducono la base imponibile. Le detrazioni
- * sono sconti d'imposta, riducono l'imposta gia' calcolata. A parita' di importo
- * una detrazione vale molto di piu'. Le addizionali si calcolano sull'imponibile
+ * sono sconti d'imposta, riducono l'imposta già calcolata. A parità di importo
+ * una detrazione vale molto di più. Le addizionali si calcolano sull'imponibile
  * fiscale e non hanno detrazioni proprie.
  */
 
@@ -43,16 +43,17 @@ import type {
   Euro,
   InputCalcolo,
   ParametriAnno,
+  Prelievo,
   RisultatoCalcolo,
   VoceCascata,
 } from "./tipi";
 
-/** Limite di sanita' sull'input: oltre, quasi certamente un errore di battitura. */
+/** Limite di sanità sull'input: oltre, quasi certamente un errore di battitura. */
 const RAL_MASSIMA_AMMESSA = 100_000_000;
 
 /**
  * Valida l'input senza lanciare eccezioni: gli errori sono un valore di ritorno.
- * Accetta `unknown` perche' il confine con l'interfaccia e' l'unico punto in cui
+ * Accetta `unknown` perché il confine con l'interfaccia è l'unico punto in cui
  * possono arrivare stringhe vuote, NaN o valori assurdi.
  */
 export function validaInput(grezzo: unknown, p: ParametriAnno): Esito<InputCalcolo> {
@@ -70,19 +71,19 @@ export function validaInput(grezzo: unknown, p: ParametriAnno): Esito<InputCalco
     errori.push({
       codice: "RAL_NON_FINITA",
       campo: "ral",
-      messaggio: "La RAL inserita non e' un numero valido.",
+      messaggio: "La RAL inserita non è un numero valido.",
     });
   } else if (ral < 0) {
     errori.push({
       codice: "RAL_NEGATIVA",
       campo: "ral",
-      messaggio: "La RAL non puo' essere negativa.",
+      messaggio: "La RAL non può essere negativa.",
     });
   } else if (ral > RAL_MASSIMA_AMMESSA) {
     errori.push({
       codice: "RAL_FUORI_SCALA",
       campo: "ral",
-      messaggio: `La RAL non puo' superare ${euro(RAL_MASSIMA_AMMESSA)} €.`,
+      messaggio: `La RAL non può superare ${euro(RAL_MASSIMA_AMMESSA)} €.`,
     });
   }
 
@@ -91,7 +92,7 @@ export function validaInput(grezzo: unknown, p: ParametriAnno): Esito<InputCalco
     errori.push({
       codice: "MENSILITA_NON_AMMESSA",
       campo: "mensilita",
-      messaggio: `Le mensilita' ammesse sono ${p.mensilita.opzioni.join(", ")}.`,
+      messaggio: `Le mensilità ammesse sono ${p.mensilita.opzioni.join(", ")}.`,
     });
   }
 
@@ -170,7 +171,7 @@ export function calcolaNumerico(
 
   const irpef = componiIrpef(lorda, art13, cuneo.spettante, cuneo.formula, cuneo.coefficiente);
 
-  // (5) addizionali, dovute solo se l'IRPEF e' dovuta
+  // (5) addizionali, dovute solo se l'IRPEF è dovuta
   const ctx = { baseImponibile: imponibileFiscale, irpefNetta: irpef.netta };
   const addizionaleRegionale = calcolaAddizionaleRegionale(ctx, p.addizionaleRegionale);
   const addizionaleComunale = calcolaAddizionaleComunale(ctx, p.addizionaleComunale);
@@ -214,7 +215,7 @@ export function calcolaNumerico(
 }
 
 /**
- * Calcolo completo con la cascata pronta per l'interfaccia. E' il punto di
+ * Calcolo completo con la cascata pronta per l'interfaccia. È il punto di
  * ingresso che la UI usa; il motore internamente passa da `calcolaNumerico`.
  */
 export function calcola(input: InputCalcolo, parametri?: ParametriAnno): RisultatoCalcolo {
@@ -235,14 +236,58 @@ export function calcola(input: InputCalcolo, parametri?: ParametriAnno): Risulta
       numerico.redditi.ral > 0
         ? (numerico.redditi.ral - numerico.nettoAnnuo) / numerico.redditi.ral
         : 0,
+    prelievo: componiPrelievo(numerico),
     cascata: componiCascata(numerico, p),
     discontinuitaVicine: discontinuitaVicine(numerico.redditi.ral, p),
   };
 }
 
 /**
+ * Separa il prelievo nelle sue due nature. Il brief chiede "quanto sono le
+ * tasse": rispondere con la somma di imposte e contributi sarebbe comodo e
+ * sbagliato, perché i contributi previdenziali non sono un'imposta — finanziano
+ * una prestazione futura intestata al lavoratore.
+ *
+ * Espone anche il netto PRIMA dei benefici fiscali, perché somma esente del
+ * cuneo e trattamento integrativo non sono parte della RAL: si sommano al netto
+ * e possono avvicinarlo al lordo, quindi in una barra proporzionale della RAL
+ * non ci stanno.
+ */
+function componiPrelievo(n: RisultatoNumerico): Prelievo {
+  /*
+   * Le voci si sommano ARROTONDATE al centesimo, non grezze. È l'unico modo per
+   * cui il totale in testata coincide con quello che il lettore ottiene sommando
+   * a mano le righe della cascata, che sono anch'esse arrotondate: a RAL 35.000
+   * le imposte sono 5.042,08 + 454,98 + 254,27 = 5.751,33, mentre la somma dei
+   * valori grezzi arrotondata darebbe 5.751,32. Uno scarto di un centesimo che
+   * non si vede da nessuna parte è preferibile a una testata che contraddice il
+   * dettaglio sotto. Il netto continua a essere calcolato sui valori pieni.
+   */
+  const imposte =
+    arrotonda(n.irpef.netta) +
+    arrotonda(n.addizionaleRegionale.importo) +
+    arrotonda(n.addizionaleComunale.importo);
+  const contributi = arrotonda(n.contributi.totale);
+  const beneficiFiscali =
+    arrotonda(n.agevolazioni.sommaEsente.importo) +
+    arrotonda(n.agevolazioni.trattamentoIntegrativo.importo);
+  const ral = n.redditi.ral;
+
+  return {
+    imposte,
+    contributi,
+    totale: imposte + contributi,
+    beneficiFiscali,
+    nettoPrimaDeiBenefici: n.nettoAnnuo - beneficiFiscali,
+    incidenzaComplessiva: ral > 0 ? (imposte + contributi) / ral : 0,
+    incidenzaImposte: ral > 0 ? imposte / ral : 0,
+    incidenzaContributi: ral > 0 ? contributi / ral : 0,
+  };
+}
+
+/**
  * Costruisce la cascata da mostrare in interfaccia. Ogni voce porta la formula
- * con i numeri gia' sostituiti e il riferimento normativo preso dal campo
+ * con i numeri già sostituiti e il riferimento normativo preso dal campo
  * `fonte` dei parametri: la UI non riscrive mai una fonte a mano.
  */
 function componiCascata(r: RisultatoNumerico, p: ParametriAnno): VoceCascata[] {
@@ -347,7 +392,7 @@ function componiCascata(r: RisultatoNumerico, p: ParametriAnno): VoceCascata[] {
       importo: r.addizionaleComunale.importo,
       segno: "sottraendo",
       formula: r.addizionaleComunale.dovuta
-        ? `${percentuale(p.addizionaleComunale.aliquota, 3)} x ${euro(r.addizionaleComunale.baseImponibile)} (sull'intero reddito: e' esenzione, non franchigia)`
+        ? `${percentuale(p.addizionaleComunale.aliquota, 3)} x ${euro(r.addizionaleComunale.baseImponibile)} (sull'intero reddito: è esenzione, non franchigia)`
         : (r.addizionaleComunale.motivoNonDovuta ?? "non dovuta"),
       fonte: p.addizionaleComunale.fonte,
       ...(p.addizionaleComunale.url ? { url: p.addizionaleComunale.url } : {}),

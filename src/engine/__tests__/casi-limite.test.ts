@@ -1,9 +1,9 @@
 /**
- * Casi limite obbligatori della §3 del dossier, piu' la validazione dell'input.
+ * Casi limite obbligatori della §3 del dossier, più la validazione dell'input.
  *
- * I casi del dossier sono espressi in IMPONIBILE, mentre l'input del motore e' la
- * RAL: `ralPerImponibile` fa l'inversione, che ha tre rami perche' la funzione
- * contributiva e' lineare a tratti.
+ * I casi del dossier sono espressi in IMPONIBILE, mentre l'input del motore è la
+ * RAL: `ralPerImponibile` fa l'inversione, che ha tre rami perché la funzione
+ * contributiva è lineare a tratti.
  */
 
 import { describe, expect, it } from "vitest";
@@ -17,8 +17,8 @@ const p = parametriPerAnno();
 
 /**
  * Inversione esatta su tutti e tre i rami della funzione contributiva. La
- * versione a un solo ramo, `imponibile / 0,9081`, e' corretta solo sotto la
- * prima fascia pensionabile e sbaglia di decine di euro sopra: e' il motivo per
+ * versione a un solo ramo, `imponibile / 0,9081`, è corretta solo sotto la
+ * prima fascia pensionabile e sbaglia di decine di euro sopra: è il motivo per
  * cui esiste `ralPerImponibileFiscale` nel motore.
  */
 function ralPerImponibile(imponibile: number): number {
@@ -32,7 +32,7 @@ describe("imponibile 23.000,00 vs 23.000,01 — esenzione comunale, non franchig
   const sotto = r(ralPerImponibile(23000));
   const sopra = r(ralPerImponibile(23000.01));
 
-  it("a 23.000,00 l'addizionale comunale non e' dovuta", () => {
+  it("a 23.000,00 l'addizionale comunale non è dovuta", () => {
     expect(sotto.addizionaleComunale.importo).toBe(0);
     expect(sotto.addizionaleComunale.esenzioneApplicata).toBe(true);
   });
@@ -43,7 +43,7 @@ describe("imponibile 23.000,00 vs 23.000,01 — esenzione comunale, non franchig
     expect(sopra.addizionaleComunale.baseImponibile).toBeCloseTo(23000.01, 2);
   });
 
-  it("il salto sul netto e' di 184 euro", () => {
+  it("il salto sul netto è di 184 euro", () => {
     const salto = netto(ralPerImponibile(23000.01)) - netto(ralPerImponibile(23000));
     expect(salto).toBeLessThan(-183.9);
     expect(salto).toBeGreaterThan(-184.1);
@@ -51,7 +51,7 @@ describe("imponibile 23.000,00 vs 23.000,01 — esenzione comunale, non franchig
 });
 
 describe("imponibile 28.000 — confine di scaglione e cambio formula detrazione", () => {
-  it("la detrazione e' continua attraverso il confine", () => {
+  it("la detrazione è continua attraverso il confine", () => {
     const a = r(ralPerImponibile(28000)).irpef.detrazioneLavoroDipendente.spettante;
     const b = r(ralPerImponibile(28000.01)).irpef.detrazioneLavoroDipendente.spettante;
     // entrambe le formule danno 1.910 a 28.000: 1910 + 1190x0 e 1910x1
@@ -68,7 +68,7 @@ describe("imponibile 28.000 — confine di scaglione e cambio formula detrazione
 });
 
 describe("imponibile 50.000,00 vs 50.000,01 — azzeramento detrazione e terzo scaglione", () => {
-  it("la detrazione art. 13 e' gia' zero a 50.000 e resta zero sopra", () => {
+  it("la detrazione art. 13 è già zero a 50.000 e resta zero sopra", () => {
     expect(r(ralPerImponibile(50000)).irpef.detrazioneLavoroDipendente.spettante).toBeCloseTo(0, 6);
     expect(r(ralPerImponibile(50000.01)).irpef.detrazioneLavoroDipendente.spettante).toBe(0);
   });
@@ -77,7 +77,7 @@ describe("imponibile 50.000,00 vs 50.000,01 — azzeramento detrazione e terzo s
     expect(r(ralPerImponibile(60000)).irpef.detrazioneLavoroDipendente.spettante).toBe(0);
   });
 
-  it("l'azzeramento e' continuo: nessun gradino", () => {
+  it("l'azzeramento è continuo: nessun gradino", () => {
     const salto = netto(ralPerImponibile(50000.01)) - netto(ralPerImponibile(50000));
     expect(Math.abs(salto)).toBeLessThan(0.5);
   });
@@ -117,17 +117,17 @@ describe("imponibile 20.000,00 vs 20.000,01 — somma esente cede all'ulteriore 
 });
 
 describe("imponibile 32.000 e 40.000 — inizio e fine del phase-out del cuneo", () => {
-  it("a 32.000 l'ulteriore detrazione e' ancora piena", () => {
+  it("a 32.000 l'ulteriore detrazione è ancora piena", () => {
     expect(arrotonda(r(ralPerImponibile(32000)).irpef.ulterioreDetrazioneCuneo.spettante)).toBe(1000);
   });
 
-  it("a meta' del phase-out vale la meta'", () => {
+  it("a metà del phase-out vale la metà", () => {
     expect(
       arrotonda(r(ralPerImponibile(36000)).irpef.ulterioreDetrazioneCuneo.spettante),
     ).toBeCloseTo(500, 2);
   });
 
-  it("a 40.000 si e' azzerata, con continuita'", () => {
+  it("a 40.000 si è azzerata, con continuità", () => {
     expect(r(ralPerImponibile(40000)).irpef.ulterioreDetrazioneCuneo.spettante).toBeCloseTo(0, 6);
     expect(r(ralPerImponibile(40000.01)).irpef.ulterioreDetrazioneCuneo.spettante).toBe(0);
   });
@@ -139,14 +139,14 @@ describe("imponibile 25.000,01 e 35.000 — maggiorazione di 65 euro", () => {
     expect(r(ralPerImponibile(25000.01)).irpef.maggiorazioneApplicata).toBe(65);
   });
 
-  it("spetta ancora a 35.000,00 e non piu' a 35.000,01", () => {
+  it("spetta ancora a 35.000,00 e non più a 35.000,01", () => {
     expect(r(ralPerImponibile(35000)).irpef.maggiorazioneApplicata).toBe(65);
     expect(r(ralPerImponibile(35000.01)).irpef.maggiorazioneApplicata).toBe(0);
   });
 });
 
 describe("RAL 56.224 vs 56.225 — attivazione dell'1% INPS aggiuntivo", () => {
-  it("a 56.224 l'aliquota aggiuntiva non e' ancora attiva", () => {
+  it("a 56.224 l'aliquota aggiuntiva non è ancora attiva", () => {
     const x = r(56224);
     expect(x.contributi.sogliaAggiuntivaSuperata).toBe(false);
     expect(x.contributi.quotaAggiuntiva).toBe(0);
@@ -159,7 +159,7 @@ describe("RAL 56.224 vs 56.225 — attivazione dell'1% INPS aggiuntivo", () => {
     expect(arrotonda(x.contributi.quotaAggiuntiva)).toBeCloseTo(0.01, 2);
   });
 
-  it("sopra la soglia l'aliquota marginale contributiva e' il 10,19%", () => {
+  it("sopra la soglia l'aliquota marginale contributiva è il 10,19%", () => {
     const marginale = (r(57000).contributi.totale - r(56224).contributi.totale) / 776;
     expect(marginale).toBeCloseTo(0.1019, 8);
   });
@@ -173,11 +173,11 @@ describe("RAL 130.000 — massimale contributivo", () => {
     expect(x.contributi.imponibilePrevidenziale).toBe(122295);
   });
 
-  it("oltre il massimale i contributi non crescono piu'", () => {
+  it("oltre il massimale i contributi non crescono più", () => {
     expect(r(200000).contributi.totale).toBeCloseTo(x.contributi.totale, 8);
   });
 
-  it("oltre il massimale l'aliquota marginale e' solo IRPEF e addizionali", () => {
+  it("oltre il massimale l'aliquota marginale è solo IRPEF e addizionali", () => {
     const marginale = 1 - (netto(131000) - netto(130000)) / 1000;
     expect(marginale).toBeCloseTo(0.43 + 0.0173 + 0.008, 4);
   });
@@ -209,7 +209,7 @@ describe("RAL basse — l'IRPEF netta non scende mai sotto zero", () => {
     expect(x.addizionaleRegionale.motivoNonDovuta).toMatch(/art\. 50 D\.Lgs\. 446\/1997/);
   });
 
-  it("a RAL zero il netto e' zero", () => {
+  it("a RAL zero il netto è zero", () => {
     expect(r(0).nettoAnnuo).toBe(0);
   });
 });
@@ -225,7 +225,7 @@ describe("trattamento integrativo — la franchigia di 75 euro sposta la soglia"
     expect(x.agevolazioni.trattamentoIntegrativo.importo).toBe(1200);
   });
 
-  it("la soglia di capienza e' 1.955 - 75 = 1.880, cioe' quella storica", () => {
+  it("la soglia di capienza è 1.955 - 75 = 1.880, cioè quella storica", () => {
     expect(r(ralPerImponibile(10000)).agevolazioni.trattamentoIntegrativo.sogliaCapienza).toBe(1880);
   });
 
@@ -239,7 +239,7 @@ describe("trattamento integrativo — la franchigia di 75 euro sposta la soglia"
     expect(r(ralPerImponibile(15000.01)).agevolazioni.trattamentoIntegrativo.spettante).toBe(false);
   });
 
-  it("e' cumulabile con la somma esente del cuneo", () => {
+  it("è cumulabile con la somma esente del cuneo", () => {
     const x = r(ralPerImponibile(12000));
     expect(x.agevolazioni.trattamentoIntegrativo.importo).toBe(1200);
     expect(x.agevolazioni.sommaEsente.importo).toBeGreaterThan(0);
@@ -296,7 +296,7 @@ describe("minimi della detrazione art. 13", () => {
     expect(arrotonda(x.irpef.detrazioneLavoroDipendente.spettante)).toBe(1955);
   });
 
-  it("a tempo determinato con pochi giorni il minimo e' 1.380 e non 690", () => {
+  it("a tempo determinato con pochi giorni il minimo è 1.380 e non 690", () => {
     const ral = ralPerImponibile(12000);
     const determinato = calcolaNumerico(
       { ral, mensilita: 13, giorniLavorati: 60, tipoContratto: "tempoDeterminato" },
@@ -328,7 +328,7 @@ describe("validazione dell'input", () => {
     if (!esito.ok) expect(esito.errori.map((e) => e.codice)).toContain(codice);
   });
 
-  it("accetta zero: e' un valore legittimo, non un errore", () => {
+  it("accetta zero: è un valore legittimo, non un errore", () => {
     expect(validaInput({ ral: 0, mensilita: 13 }, p).ok).toBe(true);
   });
 

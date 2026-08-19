@@ -6,14 +6,14 @@
  *
  *  - non hanno detrazioni proprie: si applicano al reddito complessivo secco;
  *  - sono dovute SOLO se per lo stesso anno risulta dovuta l'IRPEF al netto
- *    delle detrazioni. Se l'IRPEF netta e' zero, non si applicano. Questa e' una
+ *    delle detrazioni. Se l'IRPEF netta è zero, non si applicano. Questa è una
  *    soglia di CAPIENZA, e vale per entrambe: art. 50 D.Lgs. 446/1997 per la
  *    regionale, art. 1 D.Lgs. 360/1998 per la comunale.
  *
- * L'esenzione comunale e' inoltre un'ESENZIONE e non una franchigia: superata la
+ * L'esenzione comunale è inoltre un'ESENZIONE e non una franchigia: superata la
  * soglia il tributo si applica sull'intero reddito, non sulla sola eccedenza.
- * Il tipo e' un dato del file di parametri, non un ramo cablato nel codice,
- * perche' altri comuni deliberano franchigie vere.
+ * Il tipo è un dato del file di parametri, non un ramo cablato nel codice,
+ * perché altri comuni deliberano franchigie vere.
  */
 
 import { applicaScalaProgressiva, nonNegativo, sommaScaglioni } from "./numerico";
@@ -40,7 +40,7 @@ export function calcolaAddizionaleRegionale(
       importo: 0,
       dovuta: false,
       motivoNonDovuta:
-        "l'IRPEF netta e' pari a zero: l'addizionale regionale e' dovuta solo se per lo stesso anno risulta dovuta l'IRPEF (art. 50 D.Lgs. 446/1997)",
+        "l'IRPEF netta è pari a zero: l'addizionale regionale è dovuta solo se per lo stesso anno risulta dovuta l'IRPEF (art. 50 D.Lgs. 446/1997)",
       baseImponibile: base,
       scaglioni: [],
     };
@@ -68,7 +68,7 @@ export function calcolaAddizionaleComunale(
       importo: 0,
       dovuta: false,
       motivoNonDovuta:
-        "l'IRPEF netta e' pari a zero: l'addizionale comunale e' dovuta solo se per lo stesso anno risulta dovuta l'IRPEF (art. 1 D.Lgs. 360/1998)",
+        "l'IRPEF netta è pari a zero: l'addizionale comunale è dovuta solo se per lo stesso anno risulta dovuta l'IRPEF (art. 1 D.Lgs. 360/1998)",
       baseImponibile: base,
       esenzioneApplicata: false,
     };

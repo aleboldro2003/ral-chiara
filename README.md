@@ -5,14 +5,14 @@ Calcolatore da retribuzione annua lorda a netto per l'anno d'imposta **2026**, c
 **Demo:** https://claude.ai/code/artifact/5606b4cd-4b60-46d7-9f33-3d964056b9ff
 **Codice:** https://github.com/aleboldro2003/ral-chiara
 
-Caso modellato: impiegato del settore privato, tempo indeterminato, anno intero, domicilio fiscale a Milano (Lombardia), nessun familiare a carico, nessuna agevolazione. Il calcolo è interamente client-side e deterministico: nessun dato lascia il browser, nessuna chiamata di rete, nessun database.
+Caso modellato: impiegato del settore privato, tempo indeterminato, anno intero, domicilio fiscale a Milano (Lombardia), nessun familiare a carico, nessuna agevolazione. Lo slider copre **8.000 – 140.000 €** di RAL; il campo di testo accetta qualunque importo non negativo. Sopra il **massimale contributivo di 122.295 €** i contributi IVS si fermano, e l'interfaccia segnala che il massimale opera solo per chi è iscritto alla previdenza obbligatoria dal 1° gennaio 1996 senza anzianità precedente (art. 2 c. 18 L. 335/1995). Il calcolo è interamente client-side e deterministico: nessun dato lascia il browser, nessuna chiamata di rete, nessun database.
 
 Prototipo a scopo dimostrativo. Non sostituisce una busta paga né il parere di un consulente del lavoro.
 
 ```bash
 npm install
 npm run dev        # http://localhost:3000
-npm test           # 197 test
+npm test           # 204 test
 npm run typecheck
 npm run standalone # standalone/ral-chiara.html — pagina autoportante in un file solo
 ```
@@ -45,8 +45,12 @@ IMPONIBILE FISCALE (= reddito complessivo = reddito di lavoro dipendente)
           [NON sono imposte: si sommano al netto]
 
 NETTO ANNUO   = RAL − contributi − IRPEF netta − addizionali + somme esenti
-NETTO MENSILE = NETTO ANNUO / mensilità (12, 13 o 14)
+NETTO MENSILE MEDIO = NETTO ANNUO / mensilità (12, 13 o 14)
 ```
+
+**Il netto mensile è una media, non un cedolino.** Il calcolo è annuale: divide il netto dell'anno per il numero di mensilità. Un cedolino reale differisce, perché la tredicesima ha una tassazione propria senza detrazioni applicate su di essa, i conguagli spostano imposta fra i mesi, e il sostituto d'imposta arrotonda a ogni passaggio. Sulla somma annua le due strade coincidono; sul singolo mese no. Questo calcolatore non simula i cedolini, e lo dichiara invece di lasciarlo intendere.
+
+**Imposte e contributi non sono la stessa cosa** e l'interfaccia li tiene separati. I contributi previdenziali finanziano una prestazione futura intestata al lavoratore; le imposte no. A RAL 35.000 sono 5.751,33 € di imposte (IRPEF netta più addizionali) e 3.216,50 € di contributi: sommarli in un unico "trattenuto" risponde a una domanda diversa da quella che il lettore si sta ponendo.
 
 Tre distinzioni che il codice tiene separate perché la norma le tiene separate:
 
@@ -74,7 +78,7 @@ src/
     costoAzienda.ts          vista datore di lavoro
     marginale.ts             curva dell'aliquota marginale
     formato.ts               formattazione italiana (unico modulo che sa di locale)
-    __tests__/               197 test
+    __tests__/               204 test
   components/                interfaccia React
   app/                       Next.js App Router
 scripts/build-standalone.mjs build della pagina a file singolo
@@ -142,10 +146,10 @@ Tutte dichiarate, nessuna nascosta.
 12. Il numero di mensilità dipende dal CCNL. È un input con predefinito 13, perché è la scelta più diffusa e perché il netto mensile cambia sensibilmente
 13. La tredicesima ha una tassazione propria, senza detrazioni applicate su di essa in busta paga: sulla somma annua non cambia nulla, sul singolo cedolino sì
 
-**Sul lato azienda**
+**Sul lato azienda** — tutta la sezione è una **stima**, e l'interfaccia la espone come tale con il suo intervallo. Il moltiplicatore predefinito è **1,3691** (RAL + 30% di contributi datore + 6,9074% di quota TFR netta, INAIL escluso).
 
 14. Contributi datore stimati come intervallo percentuale (28-32%, predefinito 30%), non calcolati per CCNL specifico
-15. TFR calcolato come RAL/13,5, senza rivalutazione ISTAT né quota destinata al Fondo di Tesoreria
+15. TFR: la quota lorda è RAL/13,5 (7,4074%), ma nel costo azienda entra la **quota netta** 6,9074%, perché lo 0,50% dell'art. 3 u.c. L. 297/1982 è una maggiorazione IVS già compresa nei contributi datore e sommare la lorda produrrebbe un doppio conteggio. Senza rivalutazione ISTAT né quota destinata al Fondo di Tesoreria
 16. INAIL escluso dal calcolo predefinito e attivabile a parte: è la voce con la dispersione più alta (0,4-12% secondo la classe di rischio)
 
 **Sul presupposto soggettivo e sulle convenzioni numeriche**
@@ -234,13 +238,13 @@ Il dossier normativo è stato scritto per primo, come ricerca autonoma sulle fon
 
 Ogni correzione è stata riverificata sulla fonte primaria prima di entrare nel modello. **Tre di quei cinque errori sono stati scoperti dai test di regressione prima che il codice del motore fosse scritto**, semplicemente ricalcolando a mano i casi di riferimento sotto convenzioni diverse.
 
-Il dossier porta in fondo una sezione **Revisioni** che elenca le tredici modifiche con la ragione di ciascuna. Presentare un modello come se fosse nato perfetto sarebbe stato più semplice e meno vero.
+Il dossier porta in fondo una sezione **Revisioni** che elenca le diciannove modifiche con la ragione di ciascuna, divise in Rev. 2 e Rev. 3. Presentare un modello come se fosse nato perfetto sarebbe stato più semplice e meno vero.
 
 ---
 
 ## 7. Test
 
-197 test in cinque file. Il motore è puro, quindi girano in Node senza ambiente browser.
+204 test in cinque file. Il motore è puro, quindi girano in Node senza ambiente browser.
 
 ```bash
 npm test
@@ -250,7 +254,7 @@ npm test
 - **`casi-limite.test.ts`** — tutti i casi limite: 23.000,00 contro 23.000,01, i confini di scaglione, l'azzeramento della detrazione sopra 50.000, il passaggio somma esente → ulteriore detrazione, il phase-out del cuneo, la maggiorazione di 65 €, l'attivazione dell'1% INPS, il massimale, le RAL basse con IRPEF netta a zero, e gli input non validi (negativo, zero, stringa vuota, NaN, infinito, valori assurdi)
 - **`numerico.test.ts`** — la trappola di floating point del troncamento, l'arrotondamento half-up, le scale progressive, il round-trip dell'inversione contributiva su tutti e tre i rami
 - **`monotonia.test.ts`** — la property, in due metà
-- **`marginale-costo.test.ts`** — la gobba, la vista costo azienda, gli avvisi di prossimità alle soglie
+- **`marginale-costo.test.ts`** — la gobba, la vista costo azienda con il moltiplicatore 1,369 e i tre test che presidiano il doppio conteggio del TFR, gli avvisi di prossimità alle soglie
 
 **La property di monotonia è falsa come enunciato assoluto, ed è corretto che lo sia.** Il test non la allenta con una tolleranza generosa — nasconderebbe l'informazione più interessante del modello — ma la sdoppia:
 
@@ -262,6 +266,16 @@ La seconda copre anche le quattro della prima, e chiude un buco reale: i tre gra
 **La tolleranza vale 0,20 € e ha una derivazione.** Il troncamento del coefficiente introduce una scalinata: il coefficiente scende a scatti di 0,0001, quindi la detrazione scende a scatti di 0,119 € nella fascia 15.000-28.000 e di 0,191 € in quella 28.000-50.000. Il netto non è strettamente crescente nemmeno lontano dalle soglie. Non è un bug, è l'aritmetica della norma, ed è fissata in un test dedicato invece che nascosta sotto una tolleranza scelta a occhio.
 
 Se una di queste asserzioni cade, non è il test da aggiustare: o è cambiata la norma, o è rotto il motore.
+
+---
+
+### Come si calcola l'aliquota marginale
+
+Stima ottenuta confrontando il netto su una variazione di **100 €** di RAL, non una derivata esatta. La finestra è ampia di proposito: il troncamento del coefficiente della detrazione a quattro decimali produce gradini da pochi centesimi ogni ~1,43 € di RAL, e una finestra più stretta restituirebbe quel rumore invece dell'andamento.
+
+Sulle sette soglie a gradino la curva si interrompe invece di collegare i punti: una finestra da 100 € che contiene il salto secco da 184 € dell'addizionale comunale produce una marginale del 224%, e un asse che arrivasse fin lì schiaccerebbe tutto il resto.
+
+Il confronto sui **+1.000 €** nella vista costo azienda è una grandezza diversa e resta separato: una finestra così ampia può attraversare un cambio di regime, quindi le due cifre possono divergere. Quando succede, l'interfaccia lo dice invece di lasciarle in apparente contraddizione.
 
 ---
 
@@ -280,9 +294,11 @@ Se una di queste asserzioni cade, non è il test da aggiustare: o è cambiata la
 
 ## 9. Interfaccia
 
+Il marchio — monogramma RC e lockup orizzontale — sta in `public/` e viene incorporato come data URI da `src/marchio.ts`: la stessa interfaccia deve girare anche nella pagina autoportante, dove non c'è un server che serva gli asset e l'unica richiesta di rete ammessa è quella dei font. Nell'intestazione il lockup resta dentro un `h1` con il nome in chiaro nell'attributo `alt`, così il titolo della pagina esiste anche per un lettore di schermo.
+
 L'impianto visivo viene da un design costruito su Claude Design e portato nei componenti React uno a uno: fondo carta `#EFEBE3`, sezioni di apertura e chiusura su `#14120F`, un solo accento oro `#C8A15A`, Instrument Serif per i numeri che contano e IBM Plex Mono per quelli che devono incolonnarsi.
 
-Il grafico e' disegnato in SVG a mano invece che con una libreria: la linea deve **interrompersi** sulle soglie invece di collegarle, la banda della gobba e' un riferimento e non una serie, e le tacche degli assi vivono in HTML fuori dall'SVG per restare leggibili a qualunque larghezza. Il risultato pesa meno della meta' della versione con una libreria di grafici.
+Il grafico è disegnato in SVG a mano invece che con una libreria: la linea deve **interrompersi** sulle soglie invece di collegarle, la banda della gobba è un riferimento e non una serie, e le tacche degli assi vivono in HTML fuori dall'SVG per restare leggibili a qualunque larghezza. Il risultato pesa meno della metà della versione con una libreria di grafici.
 
 Il design nasce su tela desktop, con margine laterale fisso e minimi di griglia a 340px. Sotto i 720px quei due valori diventano fluidi e i filetti verticali fra colonne affiancate si ricompongono in orizzontali; sopra i 720px non cambia un pixel.
 

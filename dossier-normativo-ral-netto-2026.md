@@ -242,13 +242,32 @@ Fonte primaria: **MEF/DF, banca dati addizionale comunale, comune di MILANO (cod
 |---|---|
 | IVS a carico datore | 23,81% (parte della quota complessiva del 33%) |
 | Contributi datore complessivi (IVS + NASpI, CIG, ANF, maternità, malattia) | ~28–32% secondo CCNL, settore, dimensione aziendale |
-| TFR — quota annua maturata | RAL / 13,5 = **7,4074%** *(vedi nota)* |
+| TFR — quota lorda annua maturata (art. 2120 c.c.) | RAL / 13,5 = **7,4074%** |
+| TFR — contributo aggiuntivo detratto dalla quota (art. 3 u.c. L. 297/1982) | **0,50%** — è IVS, già dentro i contributi datore |
+| TFR — **quota netta stimata**, quella che entra nel costo azienda | 7,4074% − 0,50% = **6,9074%** |
+| Fondo di Garanzia TFR (art. 2 c. 8 L. 297/1982) | **0,20%** (0,40% dirigenti industriali) — voce distinta, già nei contributi datore |
 | INAIL | 0,4%–12% secondo classe di rischio (ufficio ≈ 0,4%) |
 
-> **Rev. 2 — il TFR ha due percentuali, e misurano cose diverse.** La quota annua maturata è `RAL / 13,5 = 7,4074%`. Da questa il datore trattiene lo **0,50% della retribuzione** come contributo al Fondo di Garanzia INPS, per cui l'accantonamento netto che matura a favore del lavoratore è `7,4074% − 0,50% = 6,9074%`, il 6,91% indicato nella prima stesura. **Ai fini del costo azienda vale il 7,4074%**: il datore sborsa comunque l'intero importo, cambia solo il destinatario (6,91% accantonato per il lavoratore, 0,50% versato all'INPS).
-> *Fonti:* art. 2120 c.c.; art. 2 L. 297/1982.
+> 🔴 **Rev. 3 — lo 0,50% NON è il Fondo di Garanzia, e la Rev. 2 sbagliava.** La Rev. 2 identificava lo 0,50% detratto dalla quota TFR con il contributo al Fondo di Garanzia INPS. Sono **due voci distinte**, con fonte, aliquota e natura diverse:
+>
+> | Voce | Aliquota | Natura | Fonte |
+> |---|---|---|---|
+> | Contributo aggiuntivo detratto dal TFR | **0,50%** | Maggiorazione dell'aliquota **IVS a carico datore** (0,30% dal 1° luglio 1982 + 0,20% dal 1° gennaio 1983), che il datore detrae dalla quota TFR | art. 3, ultimo comma, L. 297/1982 |
+> | Contributo al Fondo di Garanzia TFR | **0,20%** | Contributo **autonomo** alla Gestione Prestazioni Temporanee (0,40% per i dirigenti industriali) | art. 2 c. 8 L. 297/1982; portale INPS |
+>
+> **Conseguenza sul calcolo: c'era un doppio conteggio.** Essendo IVS, lo 0,50% è già compreso nel ~30% dei contributi a carico del datore. Sommare al costo aziendale anche la quota TFR **lorda** del 7,4074% lo contava una seconda volta. Il costo azienda usa quindi la quota **netta**:
+>
+> ```
+> quota TFR netta = 1/13,5 − 0,50% = 7,4074% − 0,50% = 6,9074%
+> costo azienda   = RAL × (1 + 30% + 6,9074%) = RAL × 1,3691
+> ```
+>
+> Anche il Fondo di Garanzia allo 0,20% è già dentro i contributi datore e non va sommato a parte.
+> *Fonti:* art. 2120 c.c.; art. 3 ultimo comma L. 297/1982; art. 2 c. 8 L. 297/1982.
 
-Regola pratica: **costo azienda ≈ RAL × 1,35–1,40** per un impiegato d'ufficio. Con i default del calcolatore (contributi datore 30%, TFR 7,4074%, INAIL escluso) il moltiplicatore è **1,3741**.
+Regola pratica: **costo azienda ≈ RAL × 1,35–1,40** per un impiegato d'ufficio. Con i default del calcolatore (contributi datore 30%, quota TFR netta 6,9074%, INAIL escluso) il moltiplicatore è **1,3691**, cioè il **36,91%** in più della RAL.
+
+Resta una **stima**: contributi datore, INAIL e trattamento del TFR dipendono da CCNL, settore e dimensione aziendale.
 
 Da modellare come *range configurabile*, non come numero secco: è una stima, e dichiararlo come tale è più credibile che fingere precisione.
 
@@ -411,6 +430,19 @@ Ogni parametro nel file di configurazione porta con sé il campo `fonte` e il ca
 ## 8. Revisioni
 
 Questa sezione elenca cosa è cambiato rispetto alla prima stesura e perché. La regola seguita è sempre la stessa: **vince la fonte primaria**, e ogni correzione è tracciata invece che assorbita in silenzio.
+
+### Rev. 3 — 20 agosto 2026
+
+Origine: revisione pre-consegna. La correzione nasce dalla lettura diretta della L. 297/1982, che distingue due contributi che la Rev. 2 aveva collassato in uno.
+
+| # | Sezione | Cosa è cambiato | Perché |
+|---|---|---|---|
+| 14 | §2.8 | Lo **0,50% detratto dalla quota TFR non è il Fondo di Garanzia**: è una maggiorazione dell'aliquota **IVS a carico datore** (art. 3 u.c. L. 297/1982). Il Fondo di Garanzia è voce autonoma e vale lo **0,20%** (art. 2 c. 8 L. 297/1982), 0,40% per i dirigenti industriali | La Rev. 2 attribuiva allo 0,50% la fonte e la natura sbagliate. Due contributi diversi, con due articoli diversi della stessa legge |
+| 15 | §2.8, motore | **Corretto un doppio conteggio nel costo aziendale.** Essendo IVS, lo 0,50% è già dentro il ~30% dei contributi datore: sommare anche la quota TFR lorda lo contava due volte. Il costo usa ora la **quota netta** `1/13,5 − 0,50% = 6,9074%`, e il moltiplicatore passa da **1,3741 a 1,3691** | Conseguenza aritmetica diretta del punto 14. Presidiato da tre test dedicati in `marginale-costo.test.ts` |
+| 16 | UI | Voce rinominata da "TFR maturato" a **"Quota TFR netta stimata"**; sezione da "Costo per l'azienda" a **"Stima del costo aziendale"** | L'etichetta precedente prometteva un dato esatto e nominava la grandezza sbagliata |
+| 17 | UI, motore | **Imposte e contributi separati** nell'esito: 5.751,33 € e 3.216,50 € a RAL 35.000, invece di un unico "8.967,82 € trattenuti" | I contributi previdenziali finanziano una prestazione futura intestata al lavoratore, le imposte no. Il brief chiede "quanto sono le tasse", e la somma dei due risponde a una domanda diversa |
+| 18 | UI | Aggiunto il **pulsante "Calcola il mio netto"** con conferma anche da Invio, disabilitato su input non valido. Lo slider resta in tempo reale | Requisito letterale del brief, che chiede un'interazione esplicita di calcolo |
+| 19 | §2.6, fonti | Le **etichette dei link ora corrispondono ai target**: il cuneo punta a Normattiva e non alla FAQ NoiPA, l'addizionale comunale alla query MEF su Milano/F205 e non alla pagina generica. Prassi e norma compaiono come voci distinte | Un riferimento che non porta dove dice di portare è inverificabile, ed è esattamente il difetto che questo dossier contesta alle fonti secondarie |
 
 ### Rev. 2 — 19 agosto 2026
 

@@ -27,5 +27,10 @@
     "next": "^15.5.23",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aleboldro2003/ral-chiara"
+  },
+  "homepage": "https://github.com/aleboldro2003/ral-chiara"
 }
