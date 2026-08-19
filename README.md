@@ -3,6 +3,7 @@
 Calcolatore da retribuzione annua lorda a netto per l'anno d'imposta **2026**, con la scomposizione completa di ogni trattenuta, il riferimento normativo di ogni voce, la curva dell'aliquota marginale effettiva e la vista del costo per l'azienda.
 
 **Demo:** https://claude.ai/code/artifact/5606b4cd-4b60-46d7-9f33-3d964056b9ff
+**Codice:** https://github.com/aleboldro2003/ral-chiara
 
 Caso modellato: impiegato del settore privato, tempo indeterminato, anno intero, domicilio fiscale a Milano (Lombardia), nessun familiare a carico, nessuna agevolazione. Il calcolo è interamente client-side e deterministico: nessun dato lascia il browser, nessuna chiamata di rete, nessun database.
 
@@ -278,6 +279,12 @@ Se una di queste asserzioni cade, non è il test da aggiustare: o è cambiata la
 ---
 
 ## 9. Interfaccia
+
+L'impianto visivo viene da un design costruito su Claude Design e portato nei componenti React uno a uno: fondo carta `#EFEBE3`, sezioni di apertura e chiusura su `#14120F`, un solo accento oro `#C8A15A`, Instrument Serif per i numeri che contano e IBM Plex Mono per quelli che devono incolonnarsi.
+
+Il grafico e' disegnato in SVG a mano invece che con una libreria: la linea deve **interrompersi** sulle soglie invece di collegarle, la banda della gobba e' un riferimento e non una serie, e le tacche degli assi vivono in HTML fuori dall'SVG per restare leggibili a qualunque larghezza. Il risultato pesa meno della meta' della versione con una libreria di grafici.
+
+Il design nasce su tela desktop, con margine laterale fisso e minimi di griglia a 340px. Sotto i 720px quei due valori diventano fluidi e i filetti verticali fra colonne affiancate si ricompongono in orizzontali; sopra i 720px non cambia un pixel.
 
 Il grafico dell'aliquota marginale interrompe la linea sulle sette soglie: una finestra di campionamento da 100 € che contiene il gradino da 184 € dell'addizionale comunale produce una marginale del 224%, e un asse che arrivasse fin lì schiaccerebbe tutto il resto in una banda di due millimetri. Le discontinuità sono marcate a parte, in rosso quando il netto scende e in verde quando sale.
 
