@@ -1,0 +1,22 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ral-chiara",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "ral-chiara-standalone",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "scripts/serve-standalone.mjs"
+      ],
+      "port": 4173
+    }
+  ]
+}

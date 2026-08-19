@@ -1,0 +1,434 @@
+{
+  "annoImposta": 2026,
+  "revisione": "2.0.0",
+  "aggiornatoIl": "2026-08-19",
+  "descrizione": "Parametri normativi per il calcolo da RAL a netto, anno d'imposta 2026. Caso standard: lavoratore dipendente del settore privato, tempo indeterminato, anno intero, domicilio fiscale a Milano (Lombardia), nessun familiare a carico, nessuna agevolazione. Ogni blocco numerico porta con se' i campi 'fonte' e 'url'. Nessuna costante numerica deve comparire nel codice del motore.",
+  "profiloStandard": {
+    "tipoContratto": "tempoIndeterminato",
+    "giorniLavorati": 365,
+    "giorniAnno": 365,
+    "regione": "Lombardia",
+    "comune": "Milano",
+    "nota": "Il profilo descrive le ipotesi sotto cui i parametri seguenti sono applicabili senza ragguagli. Vedi le semplificazioni dichiarate nel dossier, sezione 5."
+  },
+  "convenzioniNumeriche": {
+    "decimaliOutput": 2,
+    "modalitaArrotondamento": "half-up",
+    "cifreTroncamentoCoefficiente": 4,
+    "nota": "Il motore lavora in piena precisione (number) e arrotonda solo in presentazione, half-up e non banker's rounding. Il troncamento a 4 cifre decimali si applica ai coefficienti che lo dichiarano esplicitamente tramite il flag 'tronca'. Un motore mensile richiederebbe l'arrotondamento a ogni step, perche' il sostituto d'imposta lavora in centesimi: con il calcolo annuale la scelta opposta e' preferibile.",
+    "fonte": "Istruzioni modello 730/2026, Tabella 6 nota (2): 'Se il risultato dei rapporti e' maggiore di 0, lo stesso si assume nelle prime 4 cifre decimali'",
+    "url": "https://www.agenziaentrate.gov.it/portale/documents/20143/9764684/730_2026_istruzioni_+agg+28+05+2026.pdf"
+  },
+  "mensilita": {
+    "opzioni": [
+      12,
+      13,
+      14
+    ],
+    "predefinita": 13,
+    "nota": "Dipende dal CCNL. Non incide sul netto annuo, solo sulla sua ripartizione mensile.",
+    "fonte": "Contrattazione collettiva; semplificazione dichiarata n. 12 del dossier"
+  },
+  "contributiLavoratore": {
+    "aliquotaBase": 0.0919,
+    "aliquotaAggiuntiva": 0.01,
+    "sogliaAliquotaAggiuntiva": 56224,
+    "massimaleAnnuo": 122295,
+    "formula": "0,0919 x min(RAL, massimale) + 0,0100 x max(0, min(RAL, massimale) - soglia)",
+    "nota": "Aliquota IVS a carico lavoratore, FPLD settore privato: ripartizione ordinaria del 33% IVS in 23,81% datore + 9,19% lavoratore. Sopra la soglia della prima fascia l'aliquota marginale diventa 10,19%. L'aliquota aggiuntiva e' applicata su base annua invece che mensilizzata (semplificazione n. 7). Il massimale opera solo per chi e' privo di anzianita' contributiva al 31/12/1995 (semplificazione n. 16).",
+    "fonte": "Aliquota aggiuntiva: art. 3-ter D.L. 384/1992 conv. L. 438/1992. Soglia prima fascia e massimale: Circolare INPS n. 6 del 30/01/2026 (massimale ex art. 2 c. 18 L. 335/1995). Rivalutazione 2026 su variazione ISTAT +1,4% del 2025.",
+    "url": "https://www.inps.it/it/it/inps-comunica/atti/circolari-messaggi-e-normativa/dettaglio.circolari-e-messaggi.2026.01.circolare-numero-6-del-30-01-2026_15151.html"
+  },
+  "irpef": {
+    "modalita": "progressivaPerScaglioni",
+    "scaglioni": [
+      {
+        "fino": 28000,
+        "aliquota": 0.23
+      },
+      {
+        "fino": 50000,
+        "aliquota": 0.33
+      },
+      {
+        "fino": null,
+        "aliquota": 0.43
+      }
+    ],
+    "nota": "La seconda aliquota scende dal 35% al 33% dal 1 gennaio 2026. Attenzione alla trappola temporale: il 730/2026 riguarda i redditi 2025 e applica ancora il 35% (verificato: la tabella scaglioni delle istruzioni 730/2026 riporta '6.440,00 + 35% parte eccedente 28.000,00'). Il 33% si vede in busta paga da gennaio 2026 e in dichiarazione solo nel 730/2027.",
+    "fonte": "L. 30 dicembre 2025 n. 199, art. 1 co. 3, che modifica l'art. 11 co. 1 lett. b) TUIR (D.P.R. 917/1986). In G.U. n. 301 del 30/12/2025.",
+    "url": "https://www.agenziaentrate.gov.it/portale/imposta-sul-reddito-delle-persone-fisiche-irpef-/aliquote-e-calcolo-dell-irpef"
+  },
+  "detrazioneLavoroDipendente": {
+    "baseDiRiferimento": "redditoComplessivo",
+    "ragguagliabileAiGiorni": true,
+    "fasce": [
+      {
+        "fino": 15000,
+        "base": 1955,
+        "fattore": 0,
+        "coefficiente": null,
+        "minimo": {
+          "tempoIndeterminato": 690,
+          "tempoDeterminato": 1380,
+          "applicaDopoRagguaglio": true
+        }
+      },
+      {
+        "fino": 28000,
+        "base": 1910,
+        "fattore": 1190,
+        "coefficiente": {
+          "riferimento": 28000,
+          "denominatore": 13000,
+          "tronca": true
+        },
+        "minimo": null
+      },
+      {
+        "fino": 50000,
+        "base": 0,
+        "fattore": 1910,
+        "coefficiente": {
+          "riferimento": 50000,
+          "denominatore": 22000,
+          "tronca": true
+        },
+        "minimo": null
+      },
+      {
+        "fino": null,
+        "base": 0,
+        "fattore": 0,
+        "coefficiente": null,
+        "minimo": null
+      }
+    ],
+    "maggiorazione": {
+      "importo": 65,
+      "oltre": 25000,
+      "fino": 35000,
+      "fonte": "art. 13 co. 1.1 TUIR; istruzioni 730/2026 Tabella 6 nota (4)"
+    },
+    "formulaFascia": "detrazione = base + fattore x coefficiente, dove coefficiente = (riferimento - redditoComplessivo) / denominatore, troncato alle prime 4 cifre decimali quando 'tronca' e' true, e pari a 1 quando 'coefficiente' e' null",
+    "nota": "Le quattro fasce condividono una sola forma algebrica, cosi' che il motore abbia un'unica funzione di valutazione. Il minimo di 690/1.380 euro e' agganciato alla sola prima fascia e opera dopo il ragguaglio ai giorni: non e' un pavimento globale, e sopra i 50.000 euro la detrazione e' zero, non 690. Nella fascia 15.001-28.000 la formula produce valori superiori a 1.955 euro, ma la detrazione non puo' eccedere l'imposta lorda: l'imposta si azzera e non si genera credito rimborsabile.",
+    "fonte": "art. 13 co. 1 e 1.1 TUIR (D.P.R. 917/1986), come modificato da D.Lgs. 216/2023 e L. 207/2024. Coefficiente troncato: istruzioni 730/2026 Tabella 6 nota (2). Minimi: Tabella 6 nota (3).",
+    "url": "https://www.agenziaentrate.gov.it/portale/documents/20143/9764684/730_2026_istruzioni_+agg+28+05+2026.pdf"
+  },
+  "cuneoFiscale": {
+    "nota": "Dal 2025 il cuneo non e' piu' un esonero contributivo: i contributi INPS si versano per intero e il beneficio arriva per via fiscale. Le due misure sotto sono alternative tra loro, mai cumulabili. Entrambe sono riservate ai titolari di reddito di lavoro dipendente ex art. 49 TUIR, con esclusione dei percettori di redditi da pensione (art. 49 co. 2 lett. a).",
+    "fonte": "L. 30 dicembre 2024 n. 207, art. 1 commi 4-9; reso strutturale e confermato per il 2026",
+    "url": "https://noipa.mef.gov.it/cl/en/taglio-del-cuneo-fiscale",
+    "sommaEsente": {
+      "spettanzaRedditoComplessivoMax": 20000,
+      "baseDiCalcolo": "redditoLavoroDipendente",
+      "modalita": "aliquotaUnicaSuInteroReddito",
+      "fasce": [
+        {
+          "fino": 8500,
+          "percentuale": 0.071
+        },
+        {
+          "fino": 15000,
+          "percentuale": 0.053
+        },
+        {
+          "fino": null,
+          "percentuale": 0.048
+        }
+      ],
+      "concorreAlRedditoImponibile": false,
+      "nota": "ATTENZIONE, tre insidie distinte in una sola misura. (1) Aliquota unica sulla fascia di appartenenza, NON progressiva per scaglioni: numerose guide online la calcolano a scaglioni e sbagliano, per 18.000 euro il valore corretto e' 18.000 x 4,8% = 864 euro e non 1.092. (2) La terza fascia non ha limite superiore, il tetto di 20.000 euro e' condizione di spettanza sul reddito complessivo posta nell'alinea del comma, non estremo della fascia percentuale. (3) Meccanismo a due tempi previsto dal comma 5: il reddito di lavoro dipendente si annualizza per stabilire QUALE percentuale si applica, ma la percentuale si applica poi al reddito EFFETTIVAMENTE percepito. Esempio della Circolare 4/E: 3.000 euro percepiti in 92 giorni danno un reddito annuale teorico di 11.902,17 euro, quindi fascia b) al 5,3%, ma la somma spettante e' 159 euro = 5,3% x 3.000, non 5,3% x 11.902,17. Nel caso standard a 365 giorni le due grandezze coincidono, ma sono modellate separatamente perche' con i rapporti infrannuali divergono. Non concorre all'imponibile: si somma al netto, non riduce la base imponibile.",
+      "fonte": "L. 207/2024 art. 1 c. 4 (percentuali e fasce) e c. 5 (annualizzazione ai soli fini dell'individuazione della percentuale). Circolare AdE n. 4/E del 16 maggio 2025 (esempi di calcolo). Risposta AdE n. 7/2026 del 16 gennaio 2026 (nozione di 'giorni di lavoro dipendente'). Istruzioni 730/2026 rigo C14.",
+      "url": "https://www.inps.it/it/it/inps-comunica/notizie/dettaglio-news-page.news.2026.04.CU-2026--benefici-fiscali.html",
+      "annualizzazionePerFascia": true,
+      "baseIndividuazioneFascia": "redditoLavoroDipendenteAnnualizzato",
+      "baseApplicazionePercentuale": "redditoLavoroDipendenteEffettivo",
+      "formulaAnnualizzazione": "redditoAnnualizzato = redditoLavoroDipendenteEffettivo / giorniLavoroDipendente x giorniAnno",
+      "notaGiorni": "I 'giorni di lavoro dipendente' del denominatore comprendono festivita', riposi settimanali e altri giorni non lavorativi, ma vanno sottratti i giorni per i quali non spetta alcun reddito, neppure sotto forma di retribuzione differita, come le aspettative senza assegni. In presenza di piu' rapporti, i giorni compresi in periodi contemporanei si contano una volta sola. Se in tutto l'anno non ci sono giorni retribuiti la somma non spetta. Fonte: Risposta AdE n. 7/2026."
+    },
+    "ulterioreDetrazione": {
+      "spettanzaRedditoComplessivoMin": 20000,
+      "spettanzaRedditoComplessivoMax": 40000,
+      "baseDiRiferimento": "redditoComplessivo",
+      "fasce": [
+        {
+          "fino": 20000,
+          "base": 0,
+          "fattore": 0,
+          "coefficiente": null
+        },
+        {
+          "fino": 32000,
+          "base": 1000,
+          "fattore": 0,
+          "coefficiente": null
+        },
+        {
+          "fino": 40000,
+          "base": 0,
+          "fattore": 1000,
+          "coefficiente": {
+            "riferimento": 40000,
+            "denominatore": 8000,
+            "tronca": false
+          }
+        },
+        {
+          "fino": null,
+          "base": 0,
+          "fattore": 0,
+          "coefficiente": null
+        }
+      ],
+      "nota": "Stessa forma algebrica della detrazione art. 13, cosi' da riusare la stessa funzione di valutazione. Il flag 'tronca' e' false, ed e' una divergenza deliberata rispetto alla detrazione art. 13: la regola del troncamento discende dalle note alle tabelle dei modelli dichiarativi, che coprono le detrazioni dell'art. 13 e non la formula di phase-out del comma 6, che nelle istruzioni 730/2026 non compare nemmeno come formula. Estenderla per analogia sarebbe un'assunzione nostra travestita da norma. IMPATTO SE UN GIORNO SI TROVASSE UNA FONTE CONTRARIA: al massimo 0,10 euro (1.000 x 0,0001), e la modifica e' il solo flag 'tronca' da false a true. Il flag 'ragguagliabileAiGiorni' e' inerte nel caso standard a 365 giorni e non e' stato verificato su fonte primaria: da riverificare prima di modellare i rapporti infrannuali.",
+      "fonte": "L. 207/2024 art. 1 c. 6",
+      "url": "https://noipa.mef.gov.it/cl/en/taglio-del-cuneo-fiscale",
+      "ragguagliabileAiGiorni": true
+    }
+  },
+  "trattamentoIntegrativo": {
+    "importo": 1200,
+    "redditoComplessivoMax": 15000,
+    "franchigiaCapienza": 75,
+    "franchigiaRagguagliabileAiGiorni": true,
+    "baseCondizione": "impostaLordaSuRedditiLavoroDipendente",
+    "formulaCondizione": "impostaLordaSuRedditiLavoroDipendente > (detrazioneLavoroDipendente - franchigiaCapienza) AND redditoComplessivo <= redditoComplessivoMax",
+    "concorreAlRedditoImponibile": false,
+    "cumulabileConSommaEsente": true,
+    "nota": "I 75 euro non sono un numero magico ma un correttivo con una logica precisa: la riduzione neutralizza l'incremento della detrazione art. 13 da 1.880 a 1.955 euro, che altrimenti avrebbe fatto perdere il trattamento integrativo a lavoratori che nella disciplina previgente ne erano destinatari. In pratica 1.955 - 75 = 1.880, cioe' la soglia di capienza resta quella storica. L'effetto sul modello e' che la soglia di attivazione scende da un imponibile di 8.500 a 8.173,91 euro (RAL circa 9.001). Le due grandezze della condizione sono tenute distinte dai tipi anche se nel caso standard coincidono: l'imposta lorda della condizione e' quella sui soli redditi di lavoro dipendente e assimilati, non l'imposta lorda complessiva. La detrazione di confronto e' quella dell'art. 13 comma 1, senza la maggiorazione di 65 euro che sta al comma 1.1 e che comunque non spetta sotto i 15.000 euro. La diramazione residuale per reddito complessivo 15.001-28.000 non e' implementata perche' irraggiungibile nel caso standard: a RC 15.001 la detrazione art. 13 vale 3.099,88 contro un'imposta lorda di 3.450,23 (semplificazione n. 18).",
+    "fonte": "D.L. 3/2020 art. 1 co. 1 (ex bonus Renzi), testo vigente. La franchigia di 75 euro e' inserita da L. 207/2024 art. 1 co. 3, che aggiunge dopo 'della detrazione spettante ai sensi dell'articolo 13, comma 1, del citato testo unico' le parole 'diminuita dell'importo di 75 euro rapportato al periodo di lavoro nell'anno'. Ratio nella relazione illustrativa e in Circolare AdE n. 2/E del 06/02/2024. Formulazione operativa in istruzioni 730/2026, Sezione V rigo C14.",
+    "url": "https://www.agenziaentrate.gov.it/portale/documents/20143/9764684/730_2026_istruzioni_+agg+28+05+2026.pdf"
+  },
+  "addizionaleRegionale": {
+    "regione": "Lombardia",
+    "codiceRegione": "10",
+    "modalita": "progressivaPerScaglioni",
+    "dovutaSoloSeIrpefDovuta": true,
+    "baseImponibile": "redditoComplessivo",
+    "scaglioni": [
+      {
+        "fino": 15000,
+        "aliquota": 0.0123
+      },
+      {
+        "fino": 28000,
+        "aliquota": 0.0158
+      },
+      {
+        "fino": 50000,
+        "aliquota": 0.0172
+      },
+      {
+        "fino": null,
+        "aliquota": 0.0173
+      }
+    ],
+    "nota": "Applicazione progressiva per scaglioni, come l'IRPEF, non aliquota unica sulla fascia: alcune regioni usano l'aliquota unica, la Lombardia la progressione. Gli scaglioni regionali non coincidono con quelli IRPEF perche' la Legge di Bilancio 2026 ha prorogato fino al 2028 la facolta' per le Regioni di mantenere le addizionali sui vecchi scaglioni, e la Lombardia ha scelto di non adeguarsi. Il flag 'dovutaSoloSeIrpefDovuta' e' esposto come dato e non come regola nel codice: verificato sulla fonte primaria (art. 50 D.Lgs. 446/1997: 'L'addizionale regionale e' dovuta se per lo stesso anno l'IRPEF risulta dovuta, al netto delle detrazioni per essa riconosciute e del credito di imposta'). Nessuna detrazione propria.",
+    "fonte": "art. 72 co. 1 L.R. Lombardia 14 luglio 2003 n. 10; aliquote da MEF - Dipartimento delle Finanze, banca dati addizionale regionale, Regione Lombardia (cod. 10), pubblicazione 28/01/2026. Condizione di debenza: art. 50 D.Lgs. 446/1997.",
+    "url": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=10"
+  },
+  "addizionaleComunale": {
+    "comune": "Milano",
+    "codiceCatastale": "F205",
+    "modalita": "aliquotaUnica",
+    "aliquota": 0.008,
+    "dovutaSoloSeIrpefDovuta": true,
+    "baseImponibile": "redditoComplessivo",
+    "esenzione": {
+      "soglia": 23000,
+      "tipo": "esenzione",
+      "nota": "Tipo 'esenzione', non 'franchigia': superata la soglia l'addizionale si applica sull'intero reddito complessivo e non sulla sola eccedenza, creando una discontinuita' netta di 184 euro. Il campo 'tipo' e' esposto come dato perche' altri comuni deliberano franchigie vere, e il motore deve poterle gestire senza modifiche."
+    },
+    "delibera": {
+      "numero": "46",
+      "data": "2020-09-28",
+      "confermataIl": "2025-12-20",
+      "annoDiRiferimento": 2025,
+      "nota": "Milano non ha depositato una nuova delibera per il 2026: interrogando la banca dati MEF alla voce anno 2026 il portale restituisce 'Non ci sono dati per il comune selezionato'. In assenza di nuova delibera restano in vigore le aliquote dell'anno precedente. Da riverificare prima di ogni nuovo anno d'imposta."
+    },
+    "domicilioFiscaleRilevanteAl": "1 gennaio dell'anno d'imposta",
+    "fonte": "MEF - Dipartimento delle Finanze, banca dati addizionale comunale, comune di Milano (F205); delibera comunale n. 46 del 28/09/2020. Disciplina: art. 1 D.Lgs. 360/1998.",
+    "url": "https://www.finanze.gov.it/it/fiscalita/fiscalita-regionale-e-locale/Addizionale-comunale-allIRPEF/disciplina-del-tributo/"
+  },
+  "costoDatore": {
+    "contributiDatore": {
+      "predefinito": 0.3,
+      "minimo": 0.28,
+      "massimo": 0.32,
+      "modificabile": true,
+      "nota": "IVS a carico datore 23,81% piu' NASpI, CIG, ANF, maternita' e malattia. Il range dipende da CCNL, settore e dimensione aziendale: e' una stima, ed e' modellata come range configurabile invece che come numero secco perche' dichiararlo come stima e' piu' credibile che fingere precisione.",
+      "fonte": "Ripartizione IVS 23,81% datore + 9,19% lavoratore; contribuzione minore secondo CCNL"
+    },
+    "tfr": {
+      "divisore": 13.5,
+      "contributoFondoGaranzia": 0.005,
+      "nota": "Quota annua maturata = retribuzione / 13,5 = 7,4074%. Di questa, 0,50 punti percentuali della retribuzione sono versati al Fondo di Garanzia INPS: l'accantonamento netto per il lavoratore e' circa 6,91%. Il costo per l'azienda e' comunque il 7,4074%, cambia solo il destinatario. La vista costo azienda usa il 7,4074%. Senza rivalutazione ISTAT ne' quota destinata al Fondo di Tesoreria (semplificazione n. 15).",
+      "fonte": "art. 2120 c.c.; art. 2 L. 297/1982"
+    },
+    "inail": {
+      "inclusoNelPredefinito": false,
+      "predefinito": 0.004,
+      "minimo": 0.004,
+      "massimo": 0.12,
+      "nota": "Varia dallo 0,4% al 12% secondo la classe di rischio; per un impiegato d'ufficio circa 0,4%. Escluso dal calcolo predefinito e attivabile a parte, perche' e' la voce con la dispersione piu' alta.",
+      "fonte": "Tariffe INAIL per classe di rischio"
+    },
+    "moltiplicatorePredefinito": 1.3741,
+    "nota": "Con i valori predefiniti (contributi datore 30%, TFR 7,4074%, INAIL escluso) il costo azienda e' RAL x 1,3741, coerente con la regola pratica di 1,35-1,40 per un impiegato d'ufficio."
+  },
+  "discontinuita": {
+    "tolleranzaScalinata": 0.2,
+    "distanzaAvviso": 500,
+    "nota": "Punti in cui il netto SALTA al variare della RAL. Non sono anomalie del modello: sono soglie a gradino previste dalla norma, in cui il beneficio non si modula ma compare o sparisce di colpo. Sono tutte nello stesso array, con 'saltoNormativo' dotato di segno: separare le sfavorevoli dalle favorevoli codificherebbe nei dati una distinzione che nella norma non esiste, ed e' una preoccupazione della sola interfaccia. Ne esistono di due tipi, con meccanismi giuridici diversi: REDDITUALI, quando superata una soglia di reddito il beneficio cessa o compare, e DI CAPIENZA, quando e' il rapporto fra imposta lorda e detrazioni a far scattare l'effetto. La soglia a 8.500 li combina entrambi. 'saltoNormativo' e' la somma algebrica dei componenti elencati, cioe' il salto previsto dalla legge; 'tolleranzaScalinata' e' lo scarto massimo ammesso nei test, pari al gradino piu' alto introdotto dal troncamento del coefficiente (vedi 'scalinataTroncamento'), arrotondato per eccesso. La RAL corrispondente NON e' memorizzata qui: si ricava dall'imponibile con ralPerImponibile(), che e' un'inversione definita a tratti e non una divisione per 0,9081.",
+    "notaAvviso": "Quando la RAL inserita cade entro 'distanzaAvviso' euro da una soglia, l'interfaccia lo segnala usando 'titolo' e 'descrizione'. Il tono resta descrittivo: si dice dove sta la soglia e cosa succede attraversandola, non cosa converrebbe chiedere. Un calcolatore che da' consigli deve essere molto sicuro di quello che dice, e questo non lo e' abbastanza.",
+    "soglie": [
+      {
+        "id": "trattamento-integrativo-capienza",
+        "sogliaImponibile": null,
+        "sogliaDerivata": {
+          "tipo": "capienzaTrattamentoIntegrativo",
+          "descrizione": "imponibile al quale l'imposta lorda eguaglia la detrazione art. 13 della prima fascia al netto della franchigia di capienza",
+          "formula": "(detrazioneLavoroDipendente.fasce[0].base - trattamentoIntegrativo.franchigiaCapienza) / irpef.scaglioni[0].aliquota",
+          "nota": "Unica soglia non scritta nella norma come cifra: e' il punto in cui si incrociano tre parametri. Memorizzarne il valore numerico (8.173,91) accanto a quelli autorevoli lo renderebbe silenziosamente sbagliato al primo cambio di aliquota o di detrazione, quindi si deriva."
+        },
+        "tipo": "capienza",
+        "saltoNormativo": 1200.0,
+        "componenti": [
+          {
+            "voce": "Scatta il trattamento integrativo: l'imposta lorda supera la detrazione art. 13 diminuita della franchigia di 75 euro",
+            "importo": 1200.0
+          }
+        ],
+        "titolo": "Scatta il trattamento integrativo",
+        "descrizione": "Superata questa soglia l'imposta lorda supera la detrazione art. 13 al netto della franchigia di 75 euro, e spetta il trattamento integrativo di 1.200 euro.",
+        "fonte": "D.L. 3/2020 art. 1 co. 1, come modificato da L. 207/2024 art. 1 co. 3"
+      },
+      {
+        "id": "somma-esente-8500",
+        "sogliaImponibile": 8500,
+        "sogliaDerivata": null,
+        "tipo": "reddituale+capienza",
+        "saltoNormativo": -257.55,
+        "componenti": [
+          {
+            "voce": "Somma esente: percentuale dal 7,1% al 5,3% sull'intero reddito",
+            "importo": -153.0
+          },
+          {
+            "voce": "Addizionale regionale: l'IRPEF netta diventa positiva e il tributo diventa dovuto sull'intero imponibile",
+            "importo": -104.55
+          }
+        ],
+        "titolo": "Somma esente al 5,3% e addizionale regionale dovuta",
+        "descrizione": "Superati 8.500 euro di imponibile la percentuale della somma esente scende dal 7,1% al 5,3% applicata sull'intero reddito, e contemporaneamente l'IRPEF netta diventa positiva rendendo dovuta l'addizionale regionale su tutto l'imponibile.",
+        "fonte": "L. 207/2024 art. 1 c. 4; D.Lgs. 446/1997 art. 50"
+      },
+      {
+        "id": "trattamento-integrativo-15000",
+        "sogliaImponibile": 15000,
+        "sogliaDerivata": null,
+        "tipo": "reddituale",
+        "saltoNormativo": -130.0,
+        "componenti": [
+          {
+            "voce": "Cessa il trattamento integrativo",
+            "importo": -1200.0
+          },
+          {
+            "voce": "Detrazione art. 13: dalla prima alla seconda fascia, da 1.955 a 3.100 euro",
+            "importo": 1145.0
+          },
+          {
+            "voce": "Somma esente: percentuale dal 5,3% al 4,8% sull'intero reddito",
+            "importo": -75.0
+          }
+        ],
+        "titolo": "Fine del trattamento integrativo",
+        "descrizione": "Superati 15.000 euro di imponibile cessa il trattamento integrativo da 1.200 euro; in compenso la detrazione art. 13 passa da 1.955 a 3.100 euro e la somma esente scende dal 5,3% al 4,8%.",
+        "fonte": "D.L. 3/2020 art. 1; art. 13 TUIR; L. 207/2024 art. 1 c. 4"
+      },
+      {
+        "id": "cuneo-cambio-misura-20000",
+        "sogliaImponibile": 20000,
+        "sogliaDerivata": null,
+        "tipo": "reddituale",
+        "saltoNormativo": 40.0,
+        "componenti": [
+          {
+            "voce": "Cessa la somma esente del comma 4, pari al 4,8% di 20.000 euro",
+            "importo": -960.0
+          },
+          {
+            "voce": "Spetta l'ulteriore detrazione del comma 6, capiente per intero",
+            "importo": 1000.0
+          }
+        ],
+        "titolo": "La somma esente cede all'ulteriore detrazione",
+        "descrizione": "Superati 20.000 euro di reddito complessivo cessa la somma esente del comma 4 e subentra l'ulteriore detrazione del comma 6, che a questo livello di reddito e' capiente per intero. Le due misure non sono mai cumulabili.",
+        "fonte": "L. 207/2024 art. 1 commi 4 e 6"
+      },
+      {
+        "id": "addizionale-comunale-23000",
+        "sogliaImponibile": 23000,
+        "sogliaDerivata": null,
+        "tipo": "reddituale",
+        "saltoNormativo": -184.0,
+        "componenti": [
+          {
+            "voce": "Addizionale comunale di Milano allo 0,8% sull'intero reddito, non sulla sola eccedenza",
+            "importo": -184.0
+          }
+        ],
+        "titolo": "Fine dell'esenzione dall'addizionale comunale di Milano",
+        "descrizione": "Superati 23.000 euro di imponibile l'addizionale comunale dello 0,8% si applica sull'intero reddito e non sulla sola eccedenza: e' un'esenzione, non una franchigia.",
+        "fonte": "D.Lgs. 360/1998 art. 1; delibera Comune di Milano n. 46/2020"
+      },
+      {
+        "id": "maggiorazione-art13-25000",
+        "sogliaImponibile": 25000,
+        "sogliaDerivata": null,
+        "tipo": "reddituale",
+        "saltoNormativo": 65.0,
+        "componenti": [
+          {
+            "voce": "Scatta la maggiorazione di 65 euro della detrazione art. 13",
+            "importo": 65.0
+          }
+        ],
+        "titolo": "Scatta la maggiorazione di 65 euro",
+        "descrizione": "Superati 25.000 euro di imponibile la detrazione per lavoro dipendente e' aumentata di 65 euro. La stessa maggiorazione cessa, di colpo, a 35.000 euro.",
+        "fonte": "art. 13 co. 1.1 TUIR"
+      },
+      {
+        "id": "maggiorazione-art13-35000",
+        "sogliaImponibile": 35000,
+        "sogliaDerivata": null,
+        "tipo": "reddituale",
+        "saltoNormativo": -65.0,
+        "componenti": [
+          {
+            "voce": "Cessa la maggiorazione di 65 euro della detrazione art. 13",
+            "importo": -65.0
+          }
+        ],
+        "titolo": "Fine della maggiorazione di 65 euro",
+        "descrizione": "Superati 35.000 euro di imponibile la maggiorazione di 65 euro della detrazione per lavoro dipendente cessa di colpo, senza riduzione graduale.",
+        "fonte": "art. 13 co. 1.1 TUIR"
+      }
+    ]
+  },
+  "scalinataTroncamento": {
+    "gradinoTeoricoMassimo": 0.191,
+    "derivazione": "fattore massimo fra le fasce che troncano x 10^-cifreTroncamentoCoefficiente = 1.910 x 0,0001",
+    "nota": "Effetto collaterale del troncamento del coefficiente: il coefficiente scende a scatti di 0,0001, quindi la detrazione art. 13 scende a scatti di 0,119 euro nella fascia 15.000-28.000 (1.190 x 0,0001) e di 0,191 euro nella fascia 28.000-50.000 (1.910 x 0,0001). Il netto non e' quindi strettamente crescente nemmeno lontano dalle quattro soglie: c'e' un gradino verso il basso ogni circa 1,43 euro di RAL. Non e' un bug, e' l'aritmetica della norma come l'Agenzia la scrive, ed e' documentato e fissato in un test dedicato invece che nascosto sotto una tolleranza. L'ulteriore detrazione cuneo NON contribuisce alla scalinata perche' il suo coefficiente non e' troncato: se un giorno si trovasse una fonte che prescrive il troncamento anche per il comma 6, il gradino massimo salirebbe a 0,291 euro (0,191 + 1.000 x 0,0001) nel tratto in cui i due phase-out coesistono, e questo parametro andrebbe aggiornato insieme al flag 'tronca'.",
+    "fonte": "Conseguenza aritmetica delle istruzioni 730/2026, Tabella 6 nota (2)"
+  },
+  "gerarchiaFonti": [
+    "Testi normativi: TUIR (D.P.R. 917/1986), L. 199/2025, L. 207/2024, D.Lgs. 360/1998, D.Lgs. 446/1997, L.R. Lombardia 10/2003",
+    "Banche dati e circolari degli enti: MEF/Dipartimento delle Finanze, circolari INPS, istruzioni e circolari Agenzia delle Entrate, delibere comunali depositate",
+    "Prassi operativa istituzionale: FAQ NoiPA, FAQ INPS, Certificazione Unica",
+    "Fonti professionali: Consulenti del Lavoro, riviste specializzate - solo per orientarsi, mai come fonte di un numero",
+    "Blog e calcolatori online: solo come controprova, mai come fonte"
+  ]
+}
