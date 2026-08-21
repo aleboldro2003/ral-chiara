@@ -98,7 +98,7 @@ export function Intestazione() {
               href={REPOSITORY}
               target="_blank"
               rel="noopener noreferrer"
-              title="Codice, motore di calcolo, semplificazioni dichiarate e 200 test"
+              title="Codice, motore di calcolo, semplificazioni dichiarate e suite di test"
               style={{
                 border: "1px solid rgba(200,161,90,.4)",
                 borderRadius: 2,

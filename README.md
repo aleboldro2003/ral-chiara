@@ -2,8 +2,7 @@
 
 Calcolatore da retribuzione annua lorda a netto per l'anno d'imposta **2026**, con la scomposizione completa di ogni trattenuta, il riferimento normativo di ogni voce, la curva dell'aliquota marginale effettiva e la vista del costo per l'azienda.
 
-**Demo:** https://claude.ai/code/artifact/5606b4cd-4b60-46d7-9f33-3d964056b9ff
-**Codice:** https://github.com/aleboldro2003/ral-chiara
+**Demo:** https://ral-chiara.vercel.app  ·  **Codice:** https://github.com/aleboldro2003/ral-chiara
 
 Caso modellato: impiegato del settore privato, tempo indeterminato, anno intero, domicilio fiscale a Milano (Lombardia), nessun familiare a carico, nessuna agevolazione. Lo slider copre **8.000 – 140.000 €** di RAL; il campo di testo accetta qualunque importo non negativo. Sopra il **massimale contributivo di 122.295 €** i contributi IVS si fermano, e l'interfaccia segnala che il massimale opera solo per chi è iscritto alla previdenza obbligatoria dal 1° gennaio 1996 senza anzianità precedente (art. 2 c. 18 L. 335/1995). Il calcolo è interamente client-side e deterministico: nessun dato lascia il browser, nessuna chiamata di rete, nessun database.
 
@@ -12,7 +11,7 @@ Prototipo a scopo dimostrativo. Non sostituisce una busta paga né il parere di 
 ```bash
 npm install
 npm run dev        # http://localhost:3000
-npm test           # 204 test
+npm test           # 211 test
 npm run typecheck
 npm run standalone # standalone/ral-chiara.html — pagina autoportante in un file solo
 ```
@@ -78,7 +77,7 @@ src/
     costoAzienda.ts          vista datore di lavoro
     marginale.ts             curva dell'aliquota marginale
     formato.ts               formattazione italiana (unico modulo che sa di locale)
-    __tests__/               204 test
+    __tests__/               211 test
   components/                interfaccia React
   app/                       Next.js App Router
 scripts/build-standalone.mjs build della pagina a file singolo
@@ -98,18 +97,22 @@ Gerarchia di affidabilità usata, dalla più alta:
 4. **Fonti professionali** — Consulenti del Lavoro, riviste specializzate: usate solo per orientarsi, mai come fonte di un numero
 5. **Blog e calcolatori online** — usati **solo** come controprova, mai come fonte
 
-Il livello 5 ha prodotto errori concreti e verificabili: il calcolo *a scaglioni* della somma esente del cuneo, che è invece un'aliquota unica sulla fascia di appartenenza (per 18.000 € la differenza è 864 € contro 1.092 €), e l'inversione dei minimi 690/1.380 € dell'art. 13. Il testo della nota (3) alla Tabella 6 delle istruzioni 730/2026 è esplicito: 690 € per i rapporti a **tempo indeterminato**, 1.380 € per quelli a **tempo determinato**.
+Il livello 5 ha prodotto errori concreti e verificabili: il calcolo *a scaglioni* della somma esente del cuneo, che è invece un'aliquota unica sulla fascia di appartenenza (per 18.000 € la differenza è 864 € contro 1.092 €), e l'inversione dei minimi 690/1.380 € dell'art. 13. La nota (3) alla Tabella 6 delle istruzioni 730/2026, verificata sul PDF ufficiale, recita alla lettera: *«L'ammontare della detrazione effettivamente spettante non può essere inferiore a 690 euro per i rapporti di lavoro a tempo indeterminato e a 1.380 euro per i rapporti di lavoro a tempo determinato.»*
 
 | Voce | Fonte |
 |---|---|
-| Aliquote IRPEF 2026 | [L. 199/2025 art. 1 co. 3](https://www.agenziaentrate.gov.it/portale/imposta-sul-reddito-delle-persone-fisiche-irpef-/aliquote-e-calcolo-dell-irpef), che modifica l'art. 11 co. 1 lett. b) TUIR sostituendo il 35% con il 33% |
-| Contributi INPS, prima fascia, massimale | [Circolare INPS n. 6 del 30/01/2026](https://www.inps.it/it/it/inps-comunica/atti/circolari-messaggi-e-normativa/dettaglio.circolari-e-messaggi.2026.01.circolare-numero-6-del-30-01-2026_15151.html); aliquota aggiuntiva art. 3-*ter* D.L. 384/1992; massimale art. 2 c. 18 L. 335/1995 |
-| Detrazione lavoro dipendente | art. 13 co. 1 e 1.1 TUIR; [istruzioni 730/2026](https://www.agenziaentrate.gov.it/portale/documents/20143/9764684/730_2026_istruzioni_+agg+28+05+2026.pdf), Tabella 6 note (2) (3) (4) |
-| Cuneo fiscale | [L. 207/2024 art. 1 commi 4-9](https://noipa.mef.gov.it/cl/en/taglio-del-cuneo-fiscale); Circolare AdE n. 4/E del 16/05/2025; Risposta AdE n. 7/2026 del 16/01/2026 |
-| Trattamento integrativo | D.L. 3/2020 art. 1 co. 1, come modificato da L. 207/2024 art. 1 co. 3; Circolare AdE n. 2/E del 06/02/2024 |
-| Addizionale regionale | [MEF/DF, Lombardia cod. 10](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=10); art. 72 co. 1 L.R. Lombardia 10/2003; debenza art. 50 D.Lgs. 446/1997 |
-| Addizionale comunale | [MEF/DF, Milano F205](https://www.finanze.gov.it/it/fiscalita/fiscalita-regionale-e-locale/Addizionale-comunale-allIRPEF/disciplina-del-tributo/); delibera n. 46 del 28/09/2020; disciplina art. 1 D.Lgs. 360/1998 |
-| TFR | art. 2120 c.c.; art. 2 L. 297/1982 |
+| Voce | Fonte primaria (il link apre questa) | Prassi e documenti collegati |
+|---|---|---|
+| Aliquote IRPEF 2026 | [L. 199/2025 art. 1 co. 3 — Normattiva](https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2025-12-30;199~art1), che modifica l'art. 11 co. 1 lett. b) TUIR sostituendo il 35% con il 33% | [Aliquote e calcolo dell'IRPEF — Agenzia delle Entrate](https://www.agenziaentrate.gov.it/portale/imposta-sul-reddito-delle-persone-fisiche-irpef-/aliquote-e-calcolo-dell-irpef) |
+| Contributi INPS, prima fascia, massimale | [Circolare INPS n. 6 del 30/01/2026](https://www.inps.it/it/it/inps-comunica/atti/circolari-messaggi-e-normativa/dettaglio.circolari-e-messaggi.2026.01.circolare-numero-6-del-30-01-2026_15151.html) | aliquota aggiuntiva art. 3-*ter* D.L. 384/1992; massimale art. 2 c. 18 L. 335/1995 |
+| Detrazione lavoro dipendente | art. 13 co. 1 e 1.1 TUIR | [Istruzioni 730/2026 (PDF)](https://www.agenziaentrate.gov.it/portale/documents/20143/9764684/730_2026_istruzioni_+agg+28+05+2026.pdf), Tabella 6 note (2) (3) (4) |
+| Cuneo fiscale | [L. 207/2024 art. 1 — Normattiva](https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2024-12-30;207~art1) (commi 4-9) | [Scheda operativa NoiPA — MEF](https://noipa.mef.gov.it/cl/en/taglio-del-cuneo-fiscale); Circolare AdE n. 4/E del 16/05/2025; Risposta AdE n. 7/2026 del 16/01/2026 |
+| Trattamento integrativo | D.L. 3/2020 art. 1 co. 1, come modificato da L. 207/2024 art. 1 co. 3 | Circolare AdE n. 2/E del 06/02/2024 |
+| Addizionale regionale | [Banca dati MEF/DF — Lombardia, cod. 10](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=10) | art. 72 co. 1 L.R. Lombardia 10/2003; debenza art. 50 D.Lgs. 446/1997 |
+| Addizionale comunale | [Interrogazione banca dati MEF/DF — Milano, cod. F205](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addcomirpef/addcomirpef.php?ric=1&cod=F205) — è il link che dimostra l'assenza di delibera 2026 | [Disciplina del tributo — MEF](https://www.finanze.gov.it/it/fiscalita/fiscalita-regionale-e-locale/Addizionale-comunale-allIRPEF/disciplina-del-tributo/); delibera n. 46 del 28/09/2020; art. 1 D.Lgs. 360/1998 |
+| TFR | [L. 297/1982 — Normattiva](https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:1982-05-29;297): art. 2 c. 8 (Fondo di Garanzia, 0,20%) e art. 3 ultimo comma (contributo aggiuntivo IVS, 0,50%) | art. 2120 c.c. (quota lorda 1/13,5) |
+
+**La Risposta AdE n. 7/2026 è stata letta, non solo citata.** Il documento — [PDF sul portale dell'Agenzia](https://www.agenziaentrate.gov.it/portale/documents/20143/9570465/Risposta+n.+7_2026/6039a428-3237-b76b-9661-7549b9e798ec) — definisce i «giorni di lavoro dipendente» al denominatore del reddito annualizzato: *«in tale numero di giorni vanno in ogni caso compresi le festività, i riposi settimanali e gli altri giorni non lavorativi e vanno sottratti i giorni per i quali non spetta alcun reddito, neppure sotto forma di retribuzione differita»*; in presenza di più rapporti *«i giorni compresi in periodi contemporanei devono essere computati una sola volta»*; e in assenza totale di giorni retribuiti la somma non spetta. **Nessun vincolo aggiuntivo sul caso standard** a 365 giorni, che è la ragione per cui è citata fra le fonti pur non cambiando alcun numero.
 
 **Attenzione alla trappola temporale.** Il 730/2026 riguarda i redditi 2025 e applica ancora il 35%: la sua tabella degli scaglioni riporta «6.440,00 + 35% parte eccedente 28.000,00». Il 33% si vede in busta paga da gennaio 2026 e in dichiarazione solo nel 730/2027. Un calcolatore «anno d'imposta 2026» deve usare il 33%, ed è quello che fa questo.
 
@@ -201,7 +204,7 @@ Su un euro aggiuntivo di RAL, quanto **non** arriva in tasca:
 
 Esiste una fascia — tra circa 35.240 e 44.050 € di RAL — in cui un aumento viene tassato al ~61%, **più che nella fascia immediatamente superiore**. Il phase-out simultaneo di due agevolazioni, la detrazione dell'art. 13 e l'ulteriore detrazione del cuneo, crea una gobba.
 
-Per un'azienda che deve decidere gli aumenti la conseguenza è concreta: in quella fascia 1.000 € di RAL in più costano 1.374 € e ne fanno arrivare in tasca 393. Sopra la gobba, gli stessi 1.374 € ne fanno arrivare 507.
+Per un'azienda che deve decidere gli aumenti la conseguenza è concreta: a RAL 38.000, dentro la gobba, 1.000 € lordi in più costano **1.369 €** e ne fanno arrivare in tasca **328**. A RAL 50.000, sopra la gobba, gli stessi 1.369 € ne fanno arrivare **507**. Stesso esborso per l'azienda, il dipendente ne vede il 54% in più.
 
 La curva mostrata dall'interfaccia è calcolata numericamente dal motore per differenze finite su incrementi di 100 €. Non c'è un solo valore precalcolato.
 
@@ -244,7 +247,7 @@ Il dossier porta in fondo una sezione **Revisioni** che elenca le diciannove mod
 
 ## 7. Test
 
-204 test in cinque file. Il motore è puro, quindi girano in Node senza ambiente browser.
+211 test in cinque file. Il motore è puro, quindi girano in Node senza ambiente browser.
 
 ```bash
 npm test
@@ -298,11 +301,11 @@ Il marchio — monogramma RC e lockup orizzontale — sta in `public/` e viene i
 
 L'impianto visivo viene da un design costruito su Claude Design e portato nei componenti React uno a uno: fondo carta `#EFEBE3`, sezioni di apertura e chiusura su `#14120F`, un solo accento oro `#C8A15A`, Instrument Serif per i numeri che contano e IBM Plex Mono per quelli che devono incolonnarsi.
 
-Il grafico è disegnato in SVG a mano invece che con una libreria: la linea deve **interrompersi** sulle soglie invece di collegarle, la banda della gobba è un riferimento e non una serie, e le tacche degli assi vivono in HTML fuori dall'SVG per restare leggibili a qualunque larghezza. Il risultato pesa meno della metà della versione con una libreria di grafici.
+Il grafico è disegnato in SVG a mano invece che con una libreria: serve una linea che si interrompa invece di collegare, una banda di riferimento che non è una serie, e tacche degli assi in HTML fuori dall'SVG per restare leggibili a qualunque larghezza. Pesa meno della metà della versione con una libreria di grafici.
 
 Il design nasce su tela desktop, con margine laterale fisso e minimi di griglia a 340px. Sotto i 720px quei due valori diventano fluidi e i filetti verticali fra colonne affiancate si ricompongono in orizzontali; sopra i 720px non cambia un pixel.
 
-Il grafico dell'aliquota marginale interrompe la linea sulle sette soglie: una finestra di campionamento da 100 € che contiene il gradino da 184 € dell'addizionale comunale produce una marginale del 224%, e un asse che arrivasse fin lì schiaccerebbe tutto il resto in una banda di due millimetri. Le discontinuità sono marcate a parte, in rosso quando il netto scende e in verde quando sale.
+Le discontinuità sono marcate a parte, in rosso quando il netto scende e in verde quando sale; la linea si interrompe su ciascuna, per la ragione spiegata al §7.
 
 Quando la RAL inserita cade entro 500 € da una soglia, l'interfaccia lo segnala. Il tono resta **descrittivo**: si dice dove sta la soglia e cosa succede attraversandola, non cosa converrebbe chiedere. Un calcolatore che dà consigli deve essere molto sicuro di quello che dice, e questo non lo è abbastanza.
 
