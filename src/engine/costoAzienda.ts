@@ -15,7 +15,13 @@ import { nettoAnnuo } from "./calcola";
 import { quadraturaCentesimi } from "./formato";
 import { arrotonda, nonNegativo } from "./numerico";
 import { parametriPerAnno } from "./parametri";
-import type { CostoAzienda, DeltaMarginale, Euro, ParametriAnno } from "./tipi";
+import type {
+  CostoAzienda,
+  DeltaMarginale,
+  Euro,
+  ParametriAnno,
+  VoceComposizioneCosto,
+} from "./tipi";
 
 export interface OpzioniCostoAzienda {
   /** Sovrascrive l'aliquota contributiva a carico del datore. */
@@ -111,6 +117,65 @@ export function calcolaCostoAzienda(
       };
     })(),
   };
+}
+
+/**
+ * La composizione del costo aziendale, pronta per il grafico.
+ *
+ * Sta nel motore e non nel componente per due ragioni. La prima è che così
+ * nessuna quota si ricalcola in interfaccia: il grafico riceve numeri già
+ * fatti e si limita a disegnarli, senza duplicare una sola regola contributiva.
+ * La seconda è che diventa verificabile in Node, senza montare React.
+ *
+ * Gli importi sono quelli **mostrati**, cioè già quadrati sul totale. Le quote
+ * sono quadrate a loro volta al decimo di punto: arrotondate una per una
+ * darebbero 73% + 21,9% + 5% = 99,9%, e una legenda che non fa 100 è lo stesso
+ * difetto che la sezione ha già corretto sugli euro.
+ *
+ * L'INAIL compare solo quando è incluso. A costo totale nullo — RAL zero —
+ * restituisce un elenco vuoto invece di dividere per zero.
+ */
+export function composizioneCosto(costo: CostoAzienda): VoceComposizioneCosto[] {
+  const m = costo.mostrati;
+
+  const voci = [
+    {
+      id: "ral" as const,
+      etichetta: "RAL",
+      descrizione: "Retribuzione annua lorda, la base su cui si calcola tutto il resto.",
+      importo: m.ral,
+    },
+    {
+      id: "contributiDatore" as const,
+      etichetta: "Contributi datore INPS",
+      descrizione:
+        "Contributi previdenziali e assistenziali a carico del datore di lavoro: IVS più NASpI, CIG, ANF, maternità e malattia.",
+      importo: m.contributiDatore,
+    },
+    {
+      id: "tfr" as const,
+      etichetta: "TFR — quota azienda",
+      descrizione:
+        "Quota TFR maturata al netto dello 0,50% già incluso nei contributi del datore di lavoro.",
+      importo: m.tfrQuotaNetta,
+    },
+    {
+      id: "inail" as const,
+      etichetta: "Assicurazione INAIL",
+      descrizione:
+        "Premio assicurativo contro gli infortuni, variabile secondo la classe di rischio.",
+      importo: m.inail ?? 0,
+    },
+  ].filter((v) => v.importo > 0.5);
+
+  if (voci.length === 0 || m.costoTotale <= 0) return [];
+
+  const quote = quadraturaCentesimi(
+    voci.map((v) => (v.importo / m.costoTotale) * 10),
+    10,
+  ).map((q) => q / 10);
+
+  return voci.map((v, i) => ({ ...v, quota: quote[i] ?? 0 }));
 }
 
 /**

@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { calcolaCostoAzienda, calcolaDeltaMarginale } from "../costoAzienda";
+import { calcolaCostoAzienda, calcolaDeltaMarginale, composizioneCosto } from "../costoAzienda";
 import { aliquotaMarginale, curvaMarginale } from "../marginale";
 import { arrotonda } from "../numerico";
 import { parametriPerAnno } from "../parametri";
@@ -197,5 +197,101 @@ describe("avviso di prossimità alle soglie", () => {
     expect(ralSogliaVisualizzata(comunale, p)).toBe(25328);
     expect(25327.5).toBeLessThan(ralSogliaDi(comunale, p));
     expect(25327.5).toBeLessThan(ralSogliaVisualizzata(comunale, p));
+  });
+});
+
+/**
+ * La composizione del costo aziendale, cioè i dati del donut.
+ *
+ * Vive nel motore proprio per essere verificabile qui: il componente grafico
+ * riceve quote e importi già fatti e ci mette soltanto colore e geometria,
+ * senza ricalcolare una sola regola contributiva.
+ */
+describe("composizione del costo aziendale", () => {
+  const campione = [8000, 18387, 25000, 35000, 60000, 122295, 140000];
+
+  it("senza INAIL produce esattamente tre segmenti", () => {
+    for (const ral of campione) {
+      const voci = composizioneCosto(calcolaCostoAzienda(ral, { includiInail: false }, p));
+      expect(voci.length, `RAL ${ral}`).toBe(3);
+      expect(voci.map((v) => v.id)).toEqual(["ral", "contributiDatore", "tfr"]);
+    }
+  });
+
+  it("con INAIL produce esattamente quattro segmenti", () => {
+    for (const ral of campione) {
+      const voci = composizioneCosto(calcolaCostoAzienda(ral, { includiInail: true }, p));
+      expect(voci.length, `RAL ${ral}`).toBe(4);
+      expect(voci.map((v) => v.id)).toEqual(["ral", "contributiDatore", "tfr", "inail"]);
+    }
+  });
+
+  it("il segmento INAIL non esiste quando l'opzione è disattivata", () => {
+    const voci = composizioneCosto(calcolaCostoAzienda(35000, { includiInail: false }, p));
+    expect(voci.some((v) => v.id === "inail")).toBe(false);
+    expect(voci.some((v) => /INAIL/i.test(v.etichetta))).toBe(false);
+  });
+
+  it("le percentuali mostrate sommano sempre a 100,0%", () => {
+    for (const ral of campione) {
+      for (const includiInail of [false, true]) {
+        const voci = composizioneCosto(calcolaCostoAzienda(ral, { includiInail }, p));
+        // somma al decimo di punto, cioè la precisione con cui la legenda le stampa
+        const somma = voci.reduce((a, v) => a + Math.round(v.quota * 1000), 0);
+        expect(somma, `RAL ${ral} inail=${includiInail}`).toBe(1000);
+      }
+    }
+  });
+
+  it("gli importi dei segmenti quadrano con il costo aziendale mostrato", () => {
+    for (const ral of campione) {
+      for (const includiInail of [false, true]) {
+        const costo = calcolaCostoAzienda(ral, { includiInail }, p);
+        const voci = composizioneCosto(costo);
+        const somma = arrotonda(voci.reduce((a, v) => a + v.importo, 0));
+        expect(somma, `RAL ${ral} inail=${includiInail}`).toBe(costo.mostrati.costoTotale);
+      }
+    }
+  });
+
+  it("a costo totale nullo restituisce un elenco vuoto invece di dividere per zero", () => {
+    for (const ral of [0, -1000]) {
+      const voci = composizioneCosto(calcolaCostoAzienda(ral, { includiInail: true }, p));
+      expect(voci, `RAL ${ral}`).toEqual([]);
+    }
+  });
+
+  it("nessuna quota è NaN o fuori dall'intervallo", () => {
+    for (const ral of campione) {
+      for (const voce of composizioneCosto(calcolaCostoAzienda(ral, { includiInail: true }, p))) {
+        expect(Number.isFinite(voce.quota)).toBe(true);
+        expect(voce.quota).toBeGreaterThan(0);
+        expect(voce.quota).toBeLessThanOrEqual(1);
+        expect(Number.isFinite(voce.importo)).toBe(true);
+      }
+    }
+  });
+
+  /**
+   * "TFR netto" da solo si legge come importo netto che arriva al dipendente,
+   * che è il contrario di quello che la voce misura: è la quota che l'azienda
+   * accantona. L'etichetta lo dice, e la descrizione estesa spiega perché non
+   * coincide con la quota lorda dell'art. 2120 c.c.
+   */
+  it("la voce TFR è etichettata come quota a carico dell'azienda", () => {
+    const voci = composizioneCosto(calcolaCostoAzienda(35000, {}, p));
+    const tfr = voci.find((v) => v.id === "tfr");
+    expect(tfr?.etichetta).toBe("TFR — quota azienda");
+    expect(tfr?.etichetta).not.toMatch(/netto|netta/i);
+    expect(tfr?.descrizione).toBe(
+      "Quota TFR maturata al netto dello 0,50% già incluso nei contributi del datore di lavoro.",
+    );
+  });
+
+  it("ogni voce porta una descrizione estesa non vuota", () => {
+    for (const voce of composizioneCosto(calcolaCostoAzienda(35000, { includiInail: true }, p))) {
+      expect(voce.descrizione.length).toBeGreaterThan(20);
+      expect(voce.etichetta.length).toBeGreaterThan(0);
+    }
   });
 });

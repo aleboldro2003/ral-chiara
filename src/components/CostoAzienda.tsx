@@ -2,7 +2,11 @@
 
 import { useMemo, useState } from "react";
 
-import { calcolaCostoAzienda, calcolaDeltaMarginale } from "@/engine/costoAzienda";
+import {
+  calcolaCostoAzienda,
+  calcolaDeltaMarginale,
+  composizioneCosto,
+} from "@/engine/costoAzienda";
 import { euro, percentuale } from "@/engine/formato";
 import { aliquotaMarginale } from "@/engine/marginale";
 import { parametriPerAnno } from "@/engine/parametri";
@@ -54,10 +58,42 @@ export function CostoAzienda({ ral, nettoAnnuo }: { ral: number; nettoAnnuo: num
       etichetta: `Contributi datore (${percentuale(aliquotaDatore, 1)})`,
       valore: `${euro(m.contributiDatore)} €`,
     },
-    { etichetta: "Quota TFR netta stimata", valore: `${euro(m.tfrQuotaNetta)} €` },
+    { etichetta: "TFR — quota azienda", valore: `${euro(m.tfrQuotaNetta)} €` },
     { etichetta: "INAIL", valore: m.inail === null ? "escluso" : `${euro(m.inail)} €` },
     { etichetta: "Costo totale", valore: `${euro(m.costoTotale)} €`, totale: true },
   ];
+
+  /**
+   * Il grafico riceve le fette dal motore e ci mette soltanto colore e
+   * geometria. Nessuna quota, nessuna aliquota e nessuna regola contributiva
+   * viene ricalcolata qui: se cambiasse una norma, questo file non si tocca.
+   */
+  const CIRCONFERENZA = 2 * Math.PI * 74;
+  const COLORI: Record<string, string> = {
+    ral: "#14120F",
+    contributiDatore: "#5C7C93",
+    tfr: "#C8A15A",
+    inail: "#A03A22",
+  };
+
+  const fette = useMemo(() => {
+    let cursore = 0;
+    return composizioneCosto(costo).map((v) => {
+      const lunghezza = v.quota * CIRCONFERENZA;
+      const offset = -cursore;
+      cursore += lunghezza;
+      // 1,5px di stacco fra una fetta e l'altra, senza scendere sotto zero
+      const tratto = Math.max(0, lunghezza - 1.5);
+      return {
+        ...v,
+        colore: COLORI[v.id] ?? "#8B8378",
+        valore: `${euro(v.importo)} €`,
+        percentuale: percentuale(v.quota, 1),
+        dash: `${tratto.toFixed(2)} ${(CIRCONFERENZA - tratto).toFixed(2)}`,
+        offset: offset.toFixed(2),
+      };
+    });
+  }, [costo, CIRCONFERENZA]);
 
   return (
     <section style={{ ...CONTENITORE, padding: "56px var(--gutter) 0" }} aria-labelledby="titolo-costo">
@@ -123,6 +159,150 @@ export function CostoAzienda({ ral, nettoAnnuo }: { ral: number; nettoAnnuo: num
             </p>
           </div>
         ))}
+      </div>
+
+      <div
+        style={{
+          marginTop: 26,
+          background: "#FFFDFA",
+          border: "1px solid #E4DFD6",
+          borderRadius: 3,
+          padding: "32px 36px",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(min(280px,100%),1fr))",
+          gap: "clamp(28px,4vw,56px)",
+          alignItems: "center",
+        }}
+      >
+        <div>
+          <p style={{ ...etichettaStile("#8B8378"), marginBottom: 20 }}>Composizione del costo</p>
+          <div style={{ display: "grid", gap: 0 }}>
+            {fette.map((f) => (
+              <div
+                key={f.id}
+                title={f.descrizione}
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  gap: 14,
+                  padding: "11px 0",
+                  borderBottom: "1px solid #EFEBE3",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{ width: 10, height: 10, borderRadius: 2, flex: "none", background: f.colore }}
+                />
+                <span style={{ flex: 1, fontSize: "13.5px", color: "#4A443C" }}>{f.etichetta}</span>
+                <span
+                  style={{
+                    fontFamily: MONO,
+                    fontSize: "11.5px",
+                    color: "#8B8378",
+                    minWidth: 46,
+                    textAlign: "right",
+                  }}
+                >
+                  {f.percentuale}
+                </span>
+                <span
+                  style={{
+                    fontFamily: MONO,
+                    fontSize: 14,
+                    fontVariantNumeric: "tabular-nums",
+                    color: "#14120F",
+                    minWidth: 96,
+                    textAlign: "right",
+                  }}
+                >
+                  {f.valore}
+                </span>
+              </div>
+            ))}
+            <div style={{ display: "flex", alignItems: "baseline", gap: 14, padding: "14px 0 0" }}>
+              <span style={{ flex: 1, fontSize: "14.5px", fontWeight: 500, color: "#14120F" }}>
+                Costo totale azienda
+              </span>
+              <span
+                style={{
+                  fontFamily: MONO,
+                  fontSize: 17,
+                  fontWeight: 500,
+                  fontVariantNumeric: "tabular-nums",
+                  color: "#14120F",
+                }}
+              >
+                {euro(m.costoTotale)} €
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            position: "relative",
+            justifySelf: "center",
+            width: "100%",
+            maxWidth: 300,
+            aspectRatio: "1",
+          }}
+        >
+          <svg
+            viewBox="0 0 200 200"
+            style={{ width: "100%", height: "100%", display: "block", transform: "rotate(-90deg)" }}
+            role="img"
+            aria-label={`Composizione del costo aziendale, totale ${euro(m.costoTotale)} euro: ${fette
+              .map((f) => `${f.etichetta}, ${f.valore}, pari al ${f.percentuale}`)
+              .join("; ")}.`}
+          >
+            <circle cx={100} cy={100} r={74} fill="none" stroke="#EFEBE3" strokeWidth={36} />
+            {fette.map((f) => (
+              <circle
+                key={f.id}
+                cx={100}
+                cy={100}
+                r={74}
+                fill="none"
+                stroke={f.colore}
+                strokeWidth={36}
+                strokeDasharray={f.dash}
+                strokeDashoffset={f.offset}
+              />
+            ))}
+          </svg>
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              padding: "0 22px",
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontFamily: SERIF,
+                fontSize: "clamp(26px,3.2vw,34px)",
+                lineHeight: 1,
+                letterSpacing: "-.01em",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {euro(m.costoTotale)} €
+            </p>
+            <p style={{ ...etichettaStile("#8B8378"), letterSpacing: ".18em", marginTop: 8 }}>
+              Costo azienda
+            </p>
+            <p style={{ margin: "10px 0 0", fontFamily: MONO, fontSize: 12, color: "#9C7A45" }}>
+              {costo.moltiplicatore.toFixed(3).replace(".", ",")}× la RAL
+            </p>
+          </div>
+        </div>
       </div>
 
       <div

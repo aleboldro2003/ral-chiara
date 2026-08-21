@@ -552,7 +552,7 @@ export interface CostoAzienda {
   /** Quota lorda ex art. 2120 c.c.: RAL / 13,5 = 7,4074%. Non è un costo aggiuntivo pieno. */
   readonly tfrQuotaLorda: Euro;
   /**
-   * Quota TFR netta stimata: lorda meno il contributo aggiuntivo IVS dello 0,50%.
+   * TFR — quota azienda: la quota lorda meno il contributo aggiuntivo IVS dello 0,50%.
    * È QUESTA che entra nel costo totale, perché lo 0,50% è già dentro i
    * contributi a carico del datore.
    */
@@ -574,6 +574,22 @@ export interface CostoAzienda {
     readonly inail: Euro | null;
     readonly costoTotale: Euro;
   };
+}
+
+/**
+ * Una voce della composizione del costo aziendale, pronta da rendere.
+ *
+ * `importo` e `quota` sono già quadrati: gli importi sommano al costo totale
+ * mostrato, le quote sommano esattamente a 1. Nessun colore e nessuna
+ * geometria: quelli sono affari della presentazione.
+ */
+export interface VoceComposizioneCosto {
+  readonly id: "ral" | "contributiDatore" | "tfr" | "inail";
+  readonly etichetta: string;
+  /** Spiegazione estesa, per il tooltip e per la descrizione accessibile. */
+  readonly descrizione: string;
+  readonly importo: Euro;
+  readonly quota: Aliquota;
 }
 
 /** Un punto della curva dell'aliquota marginale effettiva. */
