@@ -11,7 +11,7 @@ Prototipo a scopo dimostrativo. Non sostituisce una busta paga né il parere di 
 ```bash
 npm install
 npm run dev        # http://localhost:3000
-npm test           # 211 test
+npm test           # 218 test
 npm run typecheck
 npm run standalone # standalone/ral-chiara.html — pagina autoportante in un file solo
 ```
@@ -77,7 +77,7 @@ src/
     costoAzienda.ts          vista datore di lavoro
     marginale.ts             curva dell'aliquota marginale
     formato.ts               formattazione italiana (unico modulo che sa di locale)
-    __tests__/               211 test
+    __tests__/               218 test
   components/                interfaccia React
   app/                       Next.js App Router
 scripts/build-standalone.mjs build della pagina a file singolo
@@ -247,7 +247,7 @@ Il dossier porta in fondo una sezione **Revisioni** che elenca le diciannove mod
 
 ## 7. Test
 
-211 test in cinque file. Il motore è puro, quindi girano in Node senza ambiente browser.
+218 test in cinque file. Il motore è puro, quindi girano in Node senza ambiente browser.
 
 ```bash
 npm test
