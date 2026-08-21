@@ -1,6 +1,6 @@
 # RAL Chiara
 
-Calcolatore da retribuzione annua lorda a netto per l'anno d'imposta **2026**, con la scomposizione completa di ogni trattenuta, il riferimento normativo di ogni voce, la curva dell'aliquota marginale effettiva e la vista del costo per l'azienda.
+Calcolatore da retribuzione annua lorda a netto per l'anno d'imposta **2026**, con la scomposizione completa di ogni trattenuta, il riferimento normativo di ogni voce e la vista del costo per l'azienda.
 
 **Demo:** https://ral-chiara.vercel.app  ·  **Codice:** https://github.com/aleboldro2003/ral-chiara
 
@@ -75,7 +75,7 @@ src/
     soglie.ts                le soglie a gradino: dove stanno, quanto valgono
     calcola.ts               orchestratore
     costoAzienda.ts          vista datore di lavoro
-    marginale.ts             curva dell'aliquota marginale
+    marginale.ts             differenze finite sul netto, per il costo azienda e le property
     formato.ts               formattazione italiana (unico modulo che sa di locale)
     __tests__/               218 test
   components/                interfaccia React
@@ -173,7 +173,7 @@ Tutte dichiarate, nessuna nascosta.
 
 **Un solo numero autorevole per concetto.** La prima fascia pensionabile è memorizzata solo su base annua e il valore mensile è derivato. Le soglie a gradino sono memorizzate in **imponibile** — la grandezza che la norma definisce — e la RAL corrispondente la calcola `ralPerImponibile()`. Un valore arrotondato che vive accanto a valori autorevoli e non va usato per calcolare non è documentazione, è una mina: `23.000 / 0,9081` vale 25.327,6071 e l'arrotondamento a 25.327,61 cade **oltre** la soglia, facendo misurare un salto di segno opposto. È successo davvero, ed è il motivo per cui il campo è stato rimosso.
 
-**L'inversione imponibile → RAL è definita a tratti.** Non è una divisione per 0,9081: sopra i 56.224 € l'aliquota contributiva marginale cambia, sopra il massimale si azzera. La prima stesura aveva un errore di segno nel ramo intermedio, esatta sotto la prima fascia e sbagliata di oltre 1.100 € sopra. L'ha trovata un caso limite sui casi limite, non una rilettura.
+**L'inversione imponibile → RAL è definita a tratti.** Non è una divisione per 0,9081: sopra i 56.224 € l'aliquota contributiva cambia, sopra il massimale si azzera. La prima stesura aveva un errore di segno nel ramo intermedio, esatta sotto la prima fascia e sbagliata di oltre 1.100 € sopra. L'ha trovata un caso limite sui casi limite, non una rilettura.
 
 **Piena precisione internamente, arrotondamento solo in presentazione.** Il motore lavora in `number` senza arrotondamenti intermedi; `arrotonda()` è half-up e non banker's rounding, perché chi legge una busta paga si aspetta che 0,005 diventi 0,01. Un motore mensile richiederebbe l'arrotondamento a ogni step, perché il sostituto d'imposta lavora in centesimi; con il calcolo annuale la scelta opposta è preferibile, e va dichiarata. I test di regressione hanno una tolleranza di un centesimo, che è esattamente la differenza fra le due convenzioni.
 
@@ -191,28 +191,9 @@ Durante la prototipazione e la revisione sono stati utilizzati strumenti di AI. 
 
 ---
 
-## 6. Tre cose non ovvie emerse dalla modellazione
+## 6. Due cose non ovvie emerse dalla modellazione
 
-### 6.1 L'aliquota marginale effettiva non è monotona
-
-Su un euro aggiuntivo di RAL, quanto **non** arriva in tasca:
-
-| Fascia di imponibile | RAL corrispondente | Componenti | Marginale sulla RAL |
-|---|---|---|---|
-| 20.000 – 28.000 | 22.024 – 30.834 | 23% IRPEF + 9,15% phase-out art. 13 + 1,58% + 0,8% | **39,8 – 40,6%** |
-| 28.000 – 32.000 | 30.834 – 35.238 | 33% + 8,68% + 1,72% + 0,8% | **49,3%** |
-| **32.000 – 40.000** | **35.238 – 44.048** | 33% + 8,68% + **12,5% phase-out cuneo** + 1,72% + 0,8% | **60,7%** |
-| 40.000 – 50.000 | 44.048 – 55.060 | 33% + 8,68% + 1,72% + 0,8% | **49,3%** |
-| 50.000 – 51.057 | 55.060 – 56.224 | 43% + 1,73% + 0,8% | **50,5%** |
-| oltre 51.057 | oltre 56.224 | 43% + 1,73% + 0,8%, contributi al 10,19% | **51,1%** |
-
-Esiste una fascia — tra circa 35.240 e 44.050 € di RAL — in cui un aumento viene tassato al ~61%, **più che nella fascia immediatamente superiore**. Il phase-out simultaneo di due agevolazioni, la detrazione dell'art. 13 e l'ulteriore detrazione del cuneo, crea una gobba.
-
-Per un'azienda che deve decidere gli aumenti la conseguenza è concreta: a RAL 38.000, dentro la gobba, 1.000 € lordi in più costano **1.369 €** e ne fanno arrivare in tasca **328**. A RAL 50.000, sopra la gobba, gli stessi 1.369 € ne fanno arrivare **507**. Stesso esborso per l'azienda, il dipendente ne vede il 54% in più.
-
-La curva mostrata dall'interfaccia è calcolata numericamente dal motore per differenze finite su incrementi di 100 €. Non c'è un solo valore precalcolato.
-
-### 6.2 Il sistema è costruito a gradini, e non solo in un punto
+### 6.1 Il sistema è costruito a gradini, e non solo in un punto
 
 Il caso più noto è l'esenzione dall'addizionale comunale di Milano, che **non è una franchigia**: superata la soglia il tributo si applica sull'intero reddito e non sulla sola eccedenza, con un salto secco di 184 €. Mappando il netto a passo di un centesimo su tutto il dominio si scopre che non è una particolarità milanese: è la forma normale con cui sono scritte queste soglie, e nel modello se ne contano **sette**.
 
@@ -233,7 +214,7 @@ Quattro osservazioni:
 - **La soglia a 8.500 € è doppia.** Due meccanismi diversi scattano nello stesso punto per coincidenza aritmetica. Un modello che ne implementasse solo uno produrrebbe metà del gradino e sembrerebbe comunque plausibile.
 - **Una sola soglia non è scritta nella norma come cifra.** L'attivazione del trattamento integrativo cade dove si incrociano tre parametri: `(1.955 − 75) / 0,23 = 8.173,91`. Il file dei parametri dichiara la regola di derivazione invece del numero, così un cambio di aliquota non la lascia silenziosamente sbagliata.
 
-### 6.3 La correttezza viene dal ciclo, non dalla prima stesura
+### 6.2 La correttezza viene dal ciclo, non dalla prima stesura
 
 Il dossier normativo è stato scritto per primo, come ricerca autonoma sulle fonti, e l'implementazione lo ha **falsificato in cinque punti**:
 
@@ -261,7 +242,7 @@ npm test
 - **`casi-limite.test.ts`** — tutti i casi limite: 23.000,00 contro 23.000,01, i confini di scaglione, l'azzeramento della detrazione sopra 50.000, il passaggio somma esente → ulteriore detrazione, il phase-out del cuneo, la maggiorazione di 65 €, l'attivazione dell'1% INPS, il massimale, le RAL basse con IRPEF netta a zero, e gli input non validi (negativo, zero, stringa vuota, NaN, infinito, valori assurdi)
 - **`numerico.test.ts`** — la trappola di floating point del troncamento, l'arrotondamento half-up, le scale progressive, il round-trip dell'inversione contributiva su tutti e tre i rami
 - **`monotonia.test.ts`** — la property, in due metà
-- **`marginale-costo.test.ts`** — la gobba, la vista costo azienda con il moltiplicatore 1,369 e i tre test che presidiano il doppio conteggio del TFR, gli avvisi di prossimità alle soglie
+- **`marginale-costo.test.ts`** — le differenze finite sul netto, la vista costo azienda con il moltiplicatore 1,369 e la sua composizione, i tre test che presidiano il doppio conteggio del TFR, gli avvisi di prossimità alle soglie
 
 **La property di monotonia è falsa come enunciato assoluto, ed è corretto che lo sia.** Il test non la allenta con una tolleranza generosa — nasconderebbe l'informazione più interessante del modello — ma la sdoppia:
 
@@ -275,14 +256,6 @@ La seconda copre anche le quattro della prima, e chiude un buco reale: i tre gra
 Se una di queste asserzioni cade, non è il test da aggiustare: o è cambiata la norma, o è rotto il motore.
 
 ---
-
-### Come si calcola l'aliquota marginale
-
-Stima ottenuta confrontando il netto su una variazione di **100 €** di RAL, non una derivata esatta. La finestra è ampia di proposito: il troncamento del coefficiente della detrazione a quattro decimali produce gradini da pochi centesimi ogni ~1,43 € di RAL, e una finestra più stretta restituirebbe quel rumore invece dell'andamento.
-
-Sulle sette soglie a gradino la curva si interrompe invece di collegare i punti: una finestra da 100 € che contiene il salto secco da 184 € dell'addizionale comunale produce una marginale del 224%, e un asse che arrivasse fin lì schiaccerebbe tutto il resto.
-
-Il confronto sui **+1.000 €** nella vista costo azienda è una grandezza diversa e resta separato: una finestra così ampia può attraversare un cambio di regime, quindi le due cifre possono divergere. Quando succede, l'interfaccia lo dice invece di lasciarle in apparente contraddizione.
 
 ---
 
@@ -305,14 +278,12 @@ Il marchio — monogramma RC e lockup orizzontale — sta in `public/` e viene i
 
 L'impianto visivo viene da un design system originale sviluppato per il prototipo e portato nei componenti React uno a uno: fondo carta `#EFEBE3`, sezioni di apertura e chiusura su `#14120F`, un solo accento oro `#C8A15A`, Instrument Serif per i numeri che contano e IBM Plex Mono per quelli che devono incolonnarsi.
 
-Il grafico è disegnato in SVG a mano invece che con una libreria: serve una linea che si interrompa invece di collegare, una banda di riferimento che non è una serie, e tacche degli assi in HTML fuori dall'SVG per restare leggibili a qualunque larghezza. Pesa meno della metà della versione con una libreria di grafici.
+Il donut della composizione del costo aziendale è disegnato in SVG a mano invece che con una libreria di grafici: sono quattro archi e un `stroke-dasharray`, e una dipendenza in più non si giustificherebbe. Importi e quote arrivano già calcolati dal motore, con la legenda testuale sempre accanto: il colore non è mai l'unico modo per distinguere una voce.
 
 Il design nasce su tela desktop, con margine laterale fisso e minimi di griglia a 340px. Sotto i 720px quei due valori diventano fluidi e i filetti verticali fra colonne affiancate si ricompongono in orizzontali; sopra i 720px non cambia un pixel.
-
-Le discontinuità sono marcate a parte, in rosso quando il netto scende e in verde quando sale; la linea si interrompe su ciascuna, per la ragione spiegata al §7.
 
 Quando la RAL inserita cade entro 500 € da una soglia, l'interfaccia lo segnala. Il tono resta **descrittivo**: si dice dove sta la soglia e cosa succede attraversandola, non cosa converrebbe chiedere. Un calcolatore che dà consigli deve essere molto sicuro di quello che dice, e questo non lo è abbastanza.
 
 La RAL di soglia mostrata all'utente è arrotondata **per eccesso**, in entrambe le direzioni del salto. È la scelta conservativa in tutti e due i casi: su una soglia negativa evita di far scattare l'avviso a chi non l'ha ancora raggiunta, su una positiva evita di promettere un beneficio non ancora maturato. Resta una finestra cieca larga meno di un euro, ma il calcolo del netto non passa mai di lì: quel valore è solo l'etichetta.
 
-Il delta marginale su 1.000 € non coincide sempre con l'aliquota marginale del grafico, perché una finestra così ampia può attraversare un cambio di regime. Quando succede, l'interfaccia lo dice invece di lasciare due numeri in apparente contraddizione.
+Il confronto sui +1.000 € nella vista costo azienda non coincide sempre con la trattenuta su un euro in più, perché una finestra così ampia può attraversare un cambio di regime. Quando succede, l'interfaccia lo dice invece di lasciare due numeri in apparente contraddizione.

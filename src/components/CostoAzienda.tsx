@@ -433,10 +433,10 @@ export function CostoAzienda({ ral, nettoAnnuo }: { ral: number; nettoAnnuo: num
                 maxWidth: "80ch",
               }}
             >
-              Non coincide con l&apos;aliquota marginale del grafico ({percentuale(marginaleLocale, 1)}{" "}
-              a questa RAL) perché un aumento di 1.000 € attraversa un cambio di regime: parte del
-              percorso è tassata a un&apos;aliquota, parte a un&apos;altra. Entrambe le cifre sono
-              corrette e rispondono a domande diverse.
+              Su un euro in più, a questa RAL, la trattenuta sarebbe il{" "}
+              {percentuale(marginaleLocale, 1)}: non coincide perché un aumento di 1.000 €
+              attraversa un cambio di regime, e parte del percorso è tassata a un&apos;aliquota,
+              parte a un&apos;altra. Entrambe le cifre sono corrette e rispondono a domande diverse.
             </p>
           )}
         </div>

@@ -10,7 +10,6 @@ import { ralSogliaVisualizzata } from "@/engine/soglie";
 import { Cascata } from "./Cascata";
 import { CONTENITORE, etichettaStile } from "./Cornice";
 import { CostoAzienda } from "./CostoAzienda";
-import { CurvaMarginale } from "./CurvaMarginale";
 
 const p = parametriPerAnno();
 
@@ -612,7 +611,6 @@ export function Calcolatore() {
       )}
 
       <Cascata risultato={r} />
-      <CurvaMarginale ral={ralCalcolata} />
       <CostoAzienda ral={ralCalcolata} nettoAnnuo={r.nettoAnnuo} />
     </>
   );
