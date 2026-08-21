@@ -46,15 +46,17 @@ export function CostoAzienda({ ral, nettoAnnuo }: { ral: number; nettoAnnuo: num
   const marginaleLocale = useMemo(() => aliquotaMarginale(ral, 100, p), [ral, p]);
   const cambioRegime = Math.abs(delta.aliquotaMarginaleEffettiva - marginaleLocale) > 0.02;
 
+  // i valori mostrati sono quadrati sul totale: le celle sommano al costo totale
+  const m = costo.mostrati;
   const celle = [
-    { etichetta: "RAL", valore: `${euro(costo.ral)} €` },
+    { etichetta: "RAL", valore: `${euro(m.ral)} €` },
     {
       etichetta: `Contributi datore (${percentuale(aliquotaDatore, 1)})`,
-      valore: `${euro(costo.contributiDatore)} €`,
+      valore: `${euro(m.contributiDatore)} €`,
     },
-    { etichetta: "Quota TFR netta stimata", valore: `${euro(costo.tfrQuotaNetta)} €` },
-    { etichetta: "INAIL", valore: costo.inail === null ? "escluso" : `${euro(costo.inail)} €` },
-    { etichetta: "Costo totale", valore: `${euro(costo.costoTotale)} €`, totale: true },
+    { etichetta: "Quota TFR netta stimata", valore: `${euro(m.tfrQuotaNetta)} €` },
+    { etichetta: "INAIL", valore: m.inail === null ? "escluso" : `${euro(m.inail)} €` },
+    { etichetta: "Costo totale", valore: `${euro(m.costoTotale)} €`, totale: true },
   ];
 
   return (
@@ -270,7 +272,7 @@ export function CostoAzienda({ ral, nettoAnnuo }: { ral: number; nettoAnnuo: num
         }}
       >
         Netto annuo del dipendente {euro(nettoAnnuo)} € su un costo aziendale stimato di{" "}
-        {euro(costo.costoTotale)} €: il{" "}
+        {euro(m.costoTotale)} €: il{" "}
         {costo.costoTotale > 0 ? percentuale(nettoAnnuo / costo.costoTotale, 1) : "—"}.
       </p>
       <p

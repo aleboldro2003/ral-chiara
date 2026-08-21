@@ -15,6 +15,7 @@
 import { describe, expect, it } from "vitest";
 
 import { calcola } from "../calcola";
+import { calcolaCostoAzienda } from "../costoAzienda";
 import { arrotonda } from "../numerico";
 import { parametriPerAnno } from "../parametri";
 
@@ -220,21 +221,30 @@ describe("la cascata esposta all'interfaccia", () => {
  * le righe della cascata.
  */
 describe("separazione tra imposte e contributi", () => {
-  it("a RAL 35.000 le imposte sono 5.751,33 e i contributi 3.216,50", () => {
+  it("a RAL 35.000 le imposte sono 5.751,32 e i contributi 3.216,50", () => {
     const r = calcola({ ral: 35000, mensilita: 13 }, p);
-    expect(arrotonda(r.prelievo.imposte)).toBe(5751.33);
+    expect(arrotonda(r.prelievo.imposte)).toBe(5751.32);
     expect(arrotonda(r.prelievo.contributi)).toBe(3216.5);
-    expect(arrotonda(r.prelievo.totale)).toBe(8967.83);
+    expect(arrotonda(r.prelievo.totale)).toBe(8967.82);
   });
 
-  it("le imposte coincidono con la somma delle voci mostrate nella cascata", () => {
-    for (const ral of [18000, 25000, 35000, 60000]) {
+  /**
+   * Le voci della cascata sono arrotondate una per una, l'aggregato è
+   * arrotondato una volta sola sul valore pieno: le due strade possono
+   * divergere di un centesimo, ed è corretto che sia così. A RAL 35.000 la
+   * somma a mano delle righe dà 5.751,33, l'aggregato 5.751,32. Fra le due,
+   * vince quella che tiene in piedi `netto + imposte + contributi = RAL`.
+   */
+  it("l'aggregato non si discosta dalle voci della cascata più di un centesimo", () => {
+    for (const ral of [18000, 25000, 35000, 60000, 90000, 130000]) {
       const r = calcola({ ral, mensilita: 13 }, p);
-      const somma =
+      const sommaVoci =
         arrotonda(r.irpef.netta) +
         arrotonda(r.addizionaleRegionale.importo) +
         arrotonda(r.addizionaleComunale.importo);
-      expect(arrotonda(r.prelievo.imposte)).toBe(arrotonda(somma));
+      expect(Math.abs(arrotonda(r.prelievo.imposte) - arrotonda(sommaVoci))).toBeLessThanOrEqual(
+        0.0101,
+      );
     }
   });
 
@@ -269,5 +279,105 @@ describe("separazione tra imposte e contributi", () => {
       r.prelievo.incidenzaComplessiva,
       6,
     );
+  });
+});
+
+/**
+ * La property della quadratura.
+ *
+ * Nasce da un difetto reale: la testata mostrava 26.032,18 + 5.751,33 +
+ * 3.216,50 = 35.000,01 €, un centesimo di troppo nell'identità su cui poggia
+ * tutta la pagina. La causa era la somma di voci già arrotondate; la cura è la
+ * piena precisione nel motore più una quadratura esplicita in presentazione.
+ *
+ * Le property esistenti non coprivano questa classe di difetti: guardano il
+ * netto e i salti alle soglie, cioè valori singoli, non la coerenza reciproca
+ * di più valori arrotondati mostrati insieme.
+ */
+describe("quadratura dei valori mostrati", () => {
+  const campione: number[] = [];
+  for (let ral = 8000; ral <= 140000; ral += 137) campione.push(ral);
+  for (const extra of [8000, 25000, 35000, 60000, 122295, 122296, 140000]) campione.push(extra);
+  for (let i = 0; i < 300; i += 1) campione.push(9000 + i * 43.37);
+
+  it("netto + imposte + contributi fa esattamente la RAL, su tutto il dominio", () => {
+    for (const ral of campione) {
+      const r = calcola({ ral, mensilita: 13 }, p);
+      const m = r.prelievo.mostrati;
+      const somma = arrotonda(m.nettoPrimaDeiBenefici + m.imposte + m.contributi);
+      expect(somma, `RAL ${ral}`).toBe(m.ral);
+    }
+  });
+
+  it("la quadratura sposta al massimo un centesimo per voce", () => {
+    for (const ral of campione) {
+      const r = calcola({ ral, mensilita: 13 }, p);
+      const m = r.prelievo.mostrati;
+      expect(Math.abs(m.imposte - r.prelievo.imposte)).toBeLessThanOrEqual(0.0101);
+      expect(Math.abs(m.contributi - r.prelievo.contributi)).toBeLessThanOrEqual(0.0101);
+      expect(
+        Math.abs(m.nettoPrimaDeiBenefici - r.prelievo.nettoPrimaDeiBenefici),
+      ).toBeLessThanOrEqual(0.0101);
+    }
+  });
+
+  it("a RAL 35.000 le imposte in piena precisione valgono 5.751,32", () => {
+    const r = calcola({ ral: 35000, mensilita: 13 }, p);
+    expect(arrotonda(r.prelievo.imposte)).toBe(5751.32);
+    expect(r.prelievo.mostrati.imposte).toBe(5751.32);
+    expect(r.prelievo.mostrati.contributi).toBe(3216.5);
+    expect(r.prelievo.mostrati.nettoPrimaDeiBenefici).toBe(26032.18);
+    expect(
+      r.prelievo.mostrati.nettoPrimaDeiBenefici +
+        r.prelievo.mostrati.imposte +
+        r.prelievo.mostrati.contributi,
+    ).toBe(35000);
+  });
+
+  it("le quattro fette della barra sommano alla RAL", () => {
+    for (const ral of campione) {
+      const m = calcola({ ral, mensilita: 13 }, p).prelievo.mostrati;
+      const somma = arrotonda(
+        m.nettoPrimaDeiBenefici + m.contributi + m.irpefNetta + m.addizionali,
+      );
+      expect(somma, `RAL ${ral}`).toBe(m.ral);
+    }
+  });
+
+  it("netto prima dei benefici più benefici fa il netto annuo mostrato", () => {
+    for (const ral of campione) {
+      const m = calcola({ ral, mensilita: 13 }, p).prelievo.mostrati;
+      expect(arrotonda(m.nettoPrimaDeiBenefici + m.beneficiFiscali), `RAL ${ral}`).toBe(
+        m.nettoAnnuo,
+      );
+    }
+  });
+
+  it("le celle del costo azienda sommano al costo totale, INAIL incluso o escluso", () => {
+    for (const ral of campione) {
+      for (const includiInail of [false, true]) {
+        const c = calcolaCostoAzienda(ral, { includiInail }, p).mostrati;
+        const somma = arrotonda(
+          c.ral + c.contributiDatore + c.tfrQuotaNetta + (c.inail ?? 0),
+        );
+        expect(somma, `RAL ${ral} inail=${includiInail}`).toBe(c.costoTotale);
+      }
+    }
+  });
+
+  /**
+   * Il caso che ha fatto emergere l'ultimo difetto: a RAL 18.387 il costo
+   * aziendale vale esattamente 25.173,165 €, mezzo centesimo. In binario quel
+   * numero è 25.173,164999999997, e `Math.round` lo manda in basso mentre
+   * `arrotonda` lo manda in alto. Quadratura e presentazione devono usare la
+   * stessa funzione, altrimenti divergono proprio sui mezzi centesimi.
+   */
+  it("il mezzo centesimo esatto non rompe la quadratura", () => {
+    const c = calcolaCostoAzienda(18387, { includiInail: false }, p);
+    expect(arrotonda(c.costoTotale)).toBe(25173.17);
+    expect(c.mostrati.costoTotale).toBe(25173.17);
+    expect(
+      arrotonda(c.mostrati.ral + c.mostrati.contributiDatore + c.mostrati.tfrQuotaNetta),
+    ).toBe(25173.17);
   });
 });

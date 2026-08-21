@@ -12,7 +12,8 @@
  */
 
 import { nettoAnnuo } from "./calcola";
-import { nonNegativo } from "./numerico";
+import { quadraturaCentesimi } from "./formato";
+import { arrotonda, nonNegativo } from "./numerico";
 import { parametriPerAnno } from "./parametri";
 import type { CostoAzienda, DeltaMarginale, Euro, ParametriAnno } from "./tipi";
 
@@ -87,6 +88,28 @@ export function calcolaCostoAzienda(
     costoMinimo,
     costoMassimo,
     moltiplicatore: base > 0 ? costoTotale / base : 0,
+    mostrati: (() => {
+      /*
+       * Stessa ragione della ripartizione del netto: le celle arrotondate una
+       * per una non sommano al totale arrotondato su tutte le RAL.
+       *
+       * L'INAIL entra fra gli addendi SOLO quando è incluso. Passarlo come zero
+       * quando è escluso lo renderebbe idoneo a ricevere un centesimo dalla
+       * quadratura, centesimo che poi sparirebbe insieme alla cella: le altre
+       * tre voci non sommerebbero più al totale.
+       */
+      const addendi = [base, contributiDatore, tfrQuotaNetta];
+      if (inail !== null) addendi.push(inail);
+
+      const q = quadraturaCentesimi(addendi, costoTotale);
+      return {
+        ral: q[0] ?? 0,
+        contributiDatore: q[1] ?? 0,
+        tfrQuotaNetta: q[2] ?? 0,
+        inail: inail === null ? null : (q[3] ?? 0),
+        costoTotale: arrotonda(costoTotale),
+      };
+    })(),
   };
 }
 

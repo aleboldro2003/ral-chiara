@@ -32,7 +32,7 @@ import {
   calcolaTrattamentoIntegrativo,
   calcolaUlterioreDetrazione,
 } from "./cuneo";
-import { euro, percentuale } from "./formato";
+import { euro, percentuale, quadraturaCentesimi } from "./formato";
 import { calcolaDetrazioneArt13, calcolaIrpefLorda, componiIrpef } from "./irpef";
 import { arrotonda, nonNegativo } from "./numerico";
 import { parametriPerAnno } from "./parametri";
@@ -255,33 +255,72 @@ export function calcola(input: InputCalcolo, parametri?: ParametriAnno): Risulta
  */
 function componiPrelievo(n: RisultatoNumerico): Prelievo {
   /*
-   * Le voci si sommano ARROTONDATE al centesimo, non grezze. È l'unico modo per
-   * cui il totale in testata coincide con quello che il lettore ottiene sommando
-   * a mano le righe della cascata, che sono anch'esse arrotondate: a RAL 35.000
-   * le imposte sono 5.042,08 + 454,98 + 254,27 = 5.751,33, mentre la somma dei
-   * valori grezzi arrotondata darebbe 5.751,32. Uno scarto di un centesimo che
-   * non si vede da nessuna parte è preferibile a una testata che contraddice il
-   * dettaglio sotto. Il netto continua a essere calcolato sui valori pieni.
+   * Somma in PIENA PRECISIONE, arrotondata una volta sola in presentazione.
+   *
+   * Una versione precedente sommava le voci già arrotondate, per far coincidere
+   * la testata con la somma a mano delle righe della cascata. Sembrava
+   * innocuo e non lo era: a RAL 35.000 produceva imposte per 5.751,33 invece di
+   * 5.751,32, e la scomposizione fondamentale
+   *
+   *     netto + imposte + contributi = RAL
+   *
+   * chiudeva a 35.000,01 €. Un centesimo che non torna nell'identità su cui
+   * poggia tutta la pagina costa più di un centesimo di scarto fra una testata e
+   * il dettaglio sottostante, e contraddiceva la convenzione dichiarata:
+   * precisione piena internamente, arrotondamento solo in uscita.
    */
   const imposte =
-    arrotonda(n.irpef.netta) +
-    arrotonda(n.addizionaleRegionale.importo) +
-    arrotonda(n.addizionaleComunale.importo);
-  const contributi = arrotonda(n.contributi.totale);
+    n.irpef.netta + n.addizionaleRegionale.importo + n.addizionaleComunale.importo;
+  const contributi = n.contributi.totale;
   const beneficiFiscali =
-    arrotonda(n.agevolazioni.sommaEsente.importo) +
-    arrotonda(n.agevolazioni.trattamentoIntegrativo.importo);
+    n.agevolazioni.sommaEsente.importo + n.agevolazioni.trattamentoIntegrativo.importo;
   const ral = n.redditi.ral;
+
+  const nettoPrimaDeiBenefici = n.nettoAnnuo - beneficiFiscali;
+
+  /*
+   * I tre addendi sommano alla RAL in piena precisione, ma arrotondarli
+   * separatamente rompe l'identità su circa il 22% del dominio. La quadratura
+   * col metodo del resto maggiore la richiude, spostando al massimo un
+   * centesimo e solo dove l'arrotondamento era già sul punto di scattare.
+   */
+  const [mNetto, mImposte, mContributi] = quadraturaCentesimi(
+    [nettoPrimaDeiBenefici, imposte, contributi],
+    ral,
+  );
 
   return {
     imposte,
     contributi,
     totale: imposte + contributi,
     beneficiFiscali,
-    nettoPrimaDeiBenefici: n.nettoAnnuo - beneficiFiscali,
+    nettoPrimaDeiBenefici,
     incidenzaComplessiva: ral > 0 ? (imposte + contributi) / ral : 0,
     incidenzaImposte: ral > 0 ? imposte / ral : 0,
     incidenzaContributi: ral > 0 ? contributi / ral : 0,
+    mostrati: (() => {
+      const nettoMostrato = mNetto ?? 0;
+      const imposteMostrate = mImposte ?? 0;
+      // le due componenti si quadrano a loro volta sul totale imposte mostrato,
+      // così le quattro fette della barra sommano ancora alla RAL
+      const [mIrpef, mAdd] = quadraturaCentesimi(
+        [n.irpef.netta, n.addizionaleRegionale.importo + n.addizionaleComunale.importo],
+        imposteMostrate,
+      );
+      // il beneficio è il residuo: il netto prima è già vincolato dall'identità
+      // sulla RAL, quindi non può essere arrotondato una seconda volta a piacere
+      const nettoAnnuoMostrato = arrotonda(n.nettoAnnuo);
+      return {
+        nettoPrimaDeiBenefici: nettoMostrato,
+        imposte: imposteMostrate,
+        contributi: mContributi ?? 0,
+        ral: arrotonda(ral),
+        irpefNetta: mIrpef ?? 0,
+        addizionali: mAdd ?? 0,
+        beneficiFiscali: arrotonda(nettoAnnuoMostrato - nettoMostrato),
+        nettoAnnuo: nettoAnnuoMostrato,
+      };
+    })(),
   };
 }
 

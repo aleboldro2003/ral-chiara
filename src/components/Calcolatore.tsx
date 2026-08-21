@@ -96,16 +96,12 @@ export function Calcolatore() {
     return [
       {
         etichetta: conBenefici ? "Netto prima dei benefici fiscali" : "Netto",
-        v: r.prelievo.nettoPrimaDeiBenefici,
+        v: r.prelievo.mostrati.nettoPrimaDeiBenefici,
         colore: "#C8A15A",
       },
-      { etichetta: "Contributi INPS", v: r.prelievo.contributi, colore: "#5C7C93" },
-      { etichetta: "IRPEF netta", v: r.irpef.netta, colore: "#1F4B6E" },
-      {
-        etichetta: "Addizionali",
-        v: r.addizionaleRegionale.importo + r.addizionaleComunale.importo,
-        colore: "#A03A22",
-      },
+      { etichetta: "Contributi INPS", v: r.prelievo.mostrati.contributi, colore: "#5C7C93" },
+      { etichetta: "IRPEF netta", v: r.prelievo.mostrati.irpefNetta, colore: "#1F4B6E" },
+      { etichetta: "Addizionali", v: r.prelievo.mostrati.addizionali, colore: "#A03A22" },
     ]
       .filter((b) => b.v > 0.5)
       .map((b) => ({
@@ -401,7 +397,7 @@ export function Calcolatore() {
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
-                  {euro(r.prelievo.imposte)} €
+                  {euro(r.prelievo.mostrati.imposte)} €
                 </p>
                 <p style={{ margin: "5px 0 0", fontSize: "11.5px", color: "#6E675D" }}>
                   IRPEF netta e addizionali
@@ -420,7 +416,7 @@ export function Calcolatore() {
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
-                  {euro(r.prelievo.contributi)} €
+                  {euro(r.prelievo.mostrati.contributi)} €
                 </p>
                 <p style={{ margin: "5px 0 0", fontSize: "11.5px", color: "#6E675D" }}>
                   previdenziali IVS, a tuo carico
@@ -506,7 +502,8 @@ export function Calcolatore() {
                   flexBasis: "100%",
                 }}
               >
-                {euro(r.prelievo.nettoPrimaDeiBenefici)} + {euro(r.prelievo.beneficiFiscali)} ={" "}
+                {euro(r.prelievo.mostrati.nettoPrimaDeiBenefici)} +{" "}
+                {euro(r.prelievo.mostrati.beneficiFiscali)} ={" "}
                 <span style={{ color: "#F6F3EE" }}>{euro(r.nettoAnnuo)} €</span> di netto annuo
               </span>
             </div>

@@ -506,6 +506,23 @@ export interface Prelievo {
   readonly incidenzaComplessiva: Aliquota;
   readonly incidenzaImposte: Aliquota;
   readonly incidenzaContributi: Aliquota;
+  /**
+   * I tre valori come vanno MOSTRATI: arrotondati al centesimo e quadrati, così
+   * che `netto + imposte + contributi` faccia esattamente la RAL mostrata.
+   * Il resto della struttura resta in piena precisione.
+   */
+  readonly mostrati: {
+    readonly nettoPrimaDeiBenefici: Euro;
+    readonly imposte: Euro;
+    readonly contributi: Euro;
+    readonly ral: Euro;
+    /** Le due componenti delle imposte, quadrate sul totale mostrato. */
+    readonly irpefNetta: Euro;
+    readonly addizionali: Euro;
+    /** Residuo che chiude `nettoPrimaDeiBenefici + beneficiFiscali = nettoAnnuo`. */
+    readonly beneficiFiscali: Euro;
+    readonly nettoAnnuo: Euro;
+  };
 }
 
 export interface RisultatoCalcolo {
@@ -549,6 +566,14 @@ export interface CostoAzienda {
   readonly costoMinimo: Euro;
   readonly costoMassimo: Euro;
   readonly moltiplicatore: number;
+  /** Le celle come vanno mostrate: sommano esattamente al costo totale mostrato. */
+  readonly mostrati: {
+    readonly ral: Euro;
+    readonly contributiDatore: Euro;
+    readonly tfrQuotaNetta: Euro;
+    readonly inail: Euro | null;
+    readonly costoTotale: Euro;
+  };
 }
 
 /** Un punto della curva dell'aliquota marginale effettiva. */
