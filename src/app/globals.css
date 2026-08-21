@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 /**
- * Palette e tipografia arrivano dal design "RAL Chiara" su Claude Design.
+ * Stili globali del design system RAL Chiara.
+ *
  * I componenti applicano i colori inline, esattamente come il file di design:
  * qui restano solo le regole che inline non si possono scrivere — stati,
  * pseudo-elementi, selezione, media query di stampa.

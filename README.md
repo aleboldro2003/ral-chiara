@@ -185,6 +185,10 @@ Tutte dichiarate, nessuna nascosta.
 
 **Nessuna dipendenza di rete.** Il calcolo è client-side e deterministico. `npm run standalone` produce una pagina autoportante in un file solo — stessi componenti React, altro bootstrap — che funziona senza server e senza connessione.
 
+### Strumenti di sviluppo
+
+Durante la prototipazione e la revisione sono stati utilizzati strumenti di AI. Le scelte di prodotto, le fonti normative, le formule, l'architettura del motore e i test sono stati verificati e compresi dall'autore.
+
 ---
 
 ## 6. Tre cose non ovvie emerse dalla modellazione
@@ -299,7 +303,7 @@ Il confronto sui **+1.000 €** nella vista costo azienda è una grandezza diver
 
 Il marchio — monogramma RC e lockup orizzontale — sta in `public/` e viene incorporato come data URI da `src/marchio.ts`: la stessa interfaccia deve girare anche nella pagina autoportante, dove non c'è un server che serva gli asset e l'unica richiesta di rete ammessa è quella dei font. Nell'intestazione il lockup resta dentro un `h1` con il nome in chiaro nell'attributo `alt`, così il titolo della pagina esiste anche per un lettore di schermo.
 
-L'impianto visivo viene da un design costruito su Claude Design e portato nei componenti React uno a uno: fondo carta `#EFEBE3`, sezioni di apertura e chiusura su `#14120F`, un solo accento oro `#C8A15A`, Instrument Serif per i numeri che contano e IBM Plex Mono per quelli che devono incolonnarsi.
+L'impianto visivo viene da un design system originale sviluppato per il prototipo e portato nei componenti React uno a uno: fondo carta `#EFEBE3`, sezioni di apertura e chiusura su `#14120F`, un solo accento oro `#C8A15A`, Instrument Serif per i numeri che contano e IBM Plex Mono per quelli che devono incolonnarsi.
 
 Il grafico è disegnato in SVG a mano invece che con una libreria: serve una linea che si interrompa invece di collegare, una banda di riferimento che non è una serie, e tacche degli assi in HTML fuori dall'SVG per restare leggibili a qualunque larghezza. Pesa meno della metà della versione con una libreria di grafici.
 
