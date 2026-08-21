@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 
 import { calcola } from "@/engine/calcola";
-import { euro, intero, percentuale } from "@/engine/formato";
+import { euro, intero, leggiImporto, percentuale } from "@/engine/formato";
 import { parametriPerAnno } from "@/engine/parametri";
 import { ralSogliaVisualizzata } from "@/engine/soglie";
 
@@ -21,18 +21,6 @@ const SLIDER_MIN = 8000;
 const SLIDER_MAX = 140000;
 const RAL_ESEMPIO = 35000;
 
-/** Accetta "35.000", "35000", "35000,50". Restituisce NaN se non è un numero. */
-function leggiRal(testo: string): number {
-  const pulito = String(testo)
-    .replace(/[^\d,.-]/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".")
-    .trim();
-  if (pulito === "") return Number.NaN;
-  const n = Number(pulito);
-  return Number.isFinite(n) ? n : Number.NaN;
-}
-
 export function Calcolatore() {
   /**
    * Due stati distinti, ed è il punto centrale di questo componente.
@@ -48,7 +36,7 @@ export function Calcolatore() {
 
   const esito = useRef<HTMLDivElement>(null);
 
-  const ralDigitata = useMemo(() => leggiRal(testoRal), [testoRal]);
+  const ralDigitata = useMemo(() => leggiImporto(testoRal), [testoRal]);
   const valida = Number.isFinite(ralDigitata) && ralDigitata >= 0;
   const inSospeso = valida && ralDigitata !== ralCalcolata;
 

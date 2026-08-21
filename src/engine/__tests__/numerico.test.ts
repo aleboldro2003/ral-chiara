@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { leggiImporto } from "../formato";
+
 import { calcolaContributi, ralPerImponibileFiscale } from "../contributi";
 import {
   applicaScalaProgressiva,
@@ -197,5 +199,63 @@ describe("ralPerImponibileFiscale — inversione dei contributi", () => {
     const ingenua = 55000 / (1 - p.contributiLavoratore.aliquotaBase);
     const esatta = ralPerImponibileFiscale(55000, p.contributiLavoratore);
     expect(Math.abs(ingenua - esatta)).toBeGreaterThan(45);
+  });
+});
+
+/**
+ * Il parser dell'input.
+ *
+ * Presidia due difetti reali della prima versione, che cancellava i caratteri
+ * estranei invece di rifiutarli e trattava ogni punto come separatore di
+ * migliaia: "abc35000" veniva accettato come 35.000, e "10000.50" diventava
+ * 1.000.050, cento volte tanto.
+ */
+describe("leggiImporto", () => {
+  it("legge la convenzione italiana", () => {
+    expect(leggiImporto("35.000")).toBe(35000);
+    expect(leggiImporto("35000,50")).toBe(35000.5);
+    expect(leggiImporto("35.000,50")).toBe(35000.5);
+    expect(leggiImporto("1.234.567,89")).toBe(1234567.89);
+    expect(leggiImporto("35000")).toBe(35000);
+    expect(leggiImporto("0")).toBe(0);
+  });
+
+  it("legge anche la convenzione anglosassone quando è inequivocabile", () => {
+    // il punto seguito da un numero di cifre diverso da tre è un decimale
+    expect(leggiImporto("10000.50")).toBe(10000.5);
+    expect(leggiImporto("10.5")).toBe(10.5);
+    expect(leggiImporto("0.5")).toBe(0.5);
+    expect(leggiImporto("1.2345")).toBe(1.2345);
+    // con entrambi i separatori vince l'ultimo come decimale
+    expect(leggiImporto("1,234,567.89")).toBe(1234567.89);
+  });
+
+  it("rifiuta invece di ripulire: nessun carattere estraneo passa", () => {
+    for (const t of ["abc35000", "35000abc", "3e5", "35_000", "trentacinquemila", "35000$", "1/2"]) {
+      expect(leggiImporto(t), t).toBeNaN();
+    }
+  });
+
+  it("tollera solo il rumore che è davvero rumore", () => {
+    expect(leggiImporto("35 000")).toBe(35000);
+    expect(leggiImporto("€ 35.000")).toBe(35000);
+    expect(leggiImporto("\u00A035.000\u00A0")).toBe(35000);
+  });
+
+  it("rifiuta i raggruppamenti malformati", () => {
+    for (const t of ["12.34.56", "1.23.456", "1234.56.789"]) {
+      expect(leggiImporto(t), t).toBeNaN();
+    }
+  });
+
+  it("rifiuta il vuoto e i separatori isolati", () => {
+    for (const t of ["", "   ", ",", ".", ",,", "--5", "-", "+"]) {
+      expect(leggiImporto(t), t).toBeNaN();
+    }
+  });
+
+  it("il segno negativo si legge, così la validazione lo può rifiutare come tale", () => {
+    expect(leggiImporto("-5000")).toBe(-5000);
+    expect(leggiImporto("+5000")).toBe(5000);
   });
 });
