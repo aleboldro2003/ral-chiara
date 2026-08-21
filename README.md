@@ -49,7 +49,7 @@ NETTO MENSILE MEDIO = NETTO ANNUO / mensilità (12, 13 o 14)
 
 **Il netto mensile è una media, non un cedolino.** Il calcolo è annuale: divide il netto dell'anno per il numero di mensilità. Un cedolino reale differisce, perché la tredicesima ha una tassazione propria senza detrazioni applicate su di essa, i conguagli spostano imposta fra i mesi, e il sostituto d'imposta arrotonda a ogni passaggio. Sulla somma annua le due strade coincidono; sul singolo mese no. Questo calcolatore non simula i cedolini, e lo dichiara invece di lasciarlo intendere.
 
-**Imposte e contributi non sono la stessa cosa** e l'interfaccia li tiene separati. I contributi previdenziali finanziano una prestazione futura intestata al lavoratore; le imposte no. A RAL 35.000 sono 5.751,33 € di imposte (IRPEF netta più addizionali) e 3.216,50 € di contributi: sommarli in un unico "trattenuto" risponde a una domanda diversa da quella che il lettore si sta ponendo.
+**Imposte e contributi non sono la stessa cosa** e l'interfaccia li tiene separati. I contributi previdenziali finanziano una prestazione futura intestata al lavoratore; le imposte no. A RAL 35.000 sono 5.751,32 € di imposte (IRPEF netta più addizionali) e 3.216,50 € di contributi: sommarli in un unico "trattenuto" risponde a una domanda diversa da quella che il lettore si sta ponendo.
 
 Tre distinzioni che il codice tiene separate perché la norma le tiene separate:
 

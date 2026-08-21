@@ -431,6 +431,18 @@ Ogni parametro nel file di configurazione porta con sé il campo `fonte` e il ca
 
 Questa sezione elenca cosa è cambiato rispetto alla prima stesura e perché. La regola seguita è sempre la stessa: **vince la fonte primaria**, e ogni correzione è tracciata invece che assorbita in silenzio.
 
+### Rev. 4 — 21 agosto 2026
+
+Origine: revisione finale pre-consegna. Due difetti di presentazione e uno di lettura dell'input, nessuno dei quali toccava il motore di calcolo.
+
+| # | Sezione | Cosa è cambiato | Perché |
+|---|---|---|---|
+| 20 | motore, UI | **La scomposizione mostrata non chiudeva.** A RAL 35.000 la testata dava `26.032,18 + 5.751,33 + 3.216,50 = 35.000,01`. Il totale imposte sommava voci già arrotondate, contro la convenzione dichiarata in §8. Ora somma in piena precisione e arrotonda una volta sola: 5.751,32 | La convenzione del progetto è precisione piena internamente e arrotondamento solo in uscita. Sommare valori già arrotondati la violava proprio nell'identità su cui poggia la pagina |
+| 21 | motore | Aggiunta `quadraturaCentesimi()` col **metodo del resto maggiore**. La sola piena precisione non bastava: arrotondare separatamente tre addendi che sommano alla RAL rompe l'identità sul 22% del dominio | È aritmetica, non un bug. Stessa tecnica con cui si quadrano i cedolini e si ripartiscono i seggi. Presidiata da una property su ~1.300 RAL |
+| 22 | UI | Stessa classe di difetto corretta su altri tre aggregati non segnalati: le quattro fette della barra, `netto prima + benefici = netto annuo`, e le celle del costo azienda | Trovati verificando gli altri aggregati invece di fermarsi a quello segnalato |
+| 23 | motore | **Il parser dell'input cancellava i caratteri estranei invece di rifiutarli**, e trattava ogni punto come separatore di migliaia: `"abc35000"` era accettato come 35.000 e `"10000.50"` diventava 1.000.050 | Accettare in silenzio un input diverso da quello digitato è peggio che rifiutarlo. Il nuovo `leggiImporto()` scioglie l'ambiguità del punto sulla lunghezza del gruppo e valida i raggruppamenti |
+| 24 | §3 | La **Risposta AdE n. 7/2026 è stata riletta sul PDF ufficiale** e le quattro affermazioni della Rev. 2 sono confermate alla lettera; aggiunti link diretto e citazioni testuali. Citata alla lettera anche la nota (3) alla Tabella 6 del 730/2026 | Una fonte citata e non verificabile dal lettore vale quanto una fonte non consultata |
+
 ### Rev. 3 — 20 agosto 2026
 
 Origine: revisione pre-consegna. La correzione nasce dalla lettura diretta della L. 297/1982, che distingue due contributi che la Rev. 2 aveva collassato in uno.
@@ -440,7 +452,7 @@ Origine: revisione pre-consegna. La correzione nasce dalla lettura diretta della
 | 14 | §2.8 | Lo **0,50% detratto dalla quota TFR non è il Fondo di Garanzia**: è una maggiorazione dell'aliquota **IVS a carico datore** (art. 3 u.c. L. 297/1982). Il Fondo di Garanzia è voce autonoma e vale lo **0,20%** (art. 2 c. 8 L. 297/1982), 0,40% per i dirigenti industriali | La Rev. 2 attribuiva allo 0,50% la fonte e la natura sbagliate. Due contributi diversi, con due articoli diversi della stessa legge |
 | 15 | §2.8, motore | **Corretto un doppio conteggio nel costo aziendale.** Essendo IVS, lo 0,50% è già dentro il ~30% dei contributi datore: sommare anche la quota TFR lorda lo contava due volte. Il costo usa ora la **quota netta** `1/13,5 − 0,50% = 6,9074%`, e il moltiplicatore passa da **1,3741 a 1,3691** | Conseguenza aritmetica diretta del punto 14. Presidiato da tre test dedicati in `marginale-costo.test.ts` |
 | 16 | UI | Voce rinominata da "TFR maturato" a **"Quota TFR netta stimata"**; sezione da "Costo per l'azienda" a **"Stima del costo aziendale"** | L'etichetta precedente prometteva un dato esatto e nominava la grandezza sbagliata |
-| 17 | UI, motore | **Imposte e contributi separati** nell'esito: 5.751,33 € e 3.216,50 € a RAL 35.000, invece di un unico "8.967,82 € trattenuti" | I contributi previdenziali finanziano una prestazione futura intestata al lavoratore, le imposte no. Il brief chiede "quanto sono le tasse", e la somma dei due risponde a una domanda diversa |
+| 17 | UI, motore | **Imposte e contributi separati** nell'esito: 5.751,32 € e 3.216,50 € a RAL 35.000, invece di un unico "8.967,82 € trattenuti" (il valore mostrato in Rev. 3 era 5.751,33, corretto in Rev. 4) | I contributi previdenziali finanziano una prestazione futura intestata al lavoratore, le imposte no. Il brief chiede "quanto sono le tasse", e la somma dei due risponde a una domanda diversa |
 | 18 | UI | Aggiunto il **pulsante "Calcola il mio netto"** con conferma anche da Invio, disabilitato su input non valido. Lo slider resta in tempo reale | Requisito letterale del brief, che chiede un'interazione esplicita di calcolo |
 | 19 | §2.6, fonti | Le **etichette dei link ora corrispondono ai target**: il cuneo punta a Normattiva e non alla FAQ NoiPA, l'addizionale comunale alla query MEF su Milano/F205 e non alla pagina generica. Prassi e norma compaiono come voci distinte | Un riferimento che non porta dove dice di portare è inverificabile, ed è esattamente il difetto che questo dossier contesta alle fonti secondarie |
 
