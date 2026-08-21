@@ -7,3 +7,6 @@ standalone/
 next-env.d.ts
 .DS_Store
 .vercel
+
+# configurazione locale degli strumenti di sviluppo, non fa parte della consegna
+.claude/
